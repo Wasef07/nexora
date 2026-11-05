@@ -13,8 +13,6 @@ const DEFAULT_REASON: UpgradeReason = {
 
 const UpgradeDialogContext = createContext<(reason?: UpgradeReason) => void>(() => {});
 
-// Lets any part of the app open the pricing dialog with its own reason, e.g.
-// openUpgrade({ title: "You're out of agent prompts" }) or { title: "PDF export is a paid feature" }.
 export function UpgradeDialogProvider({ children }: { children: ReactNode }) {
   const [reason, setReason] = useState<UpgradeReason | null>(null);
   const {orgId} = useAuth();
@@ -29,7 +27,7 @@ export function UpgradeDialogProvider({ children }: { children: ReactNode }) {
             <DialogTitle className="text-2xl">{reason?.title}</DialogTitle>
             {reason?.description && <DialogDescription>{reason.description}</DialogDescription>}
           </DialogHeader>
-          {/* Close first: this dialog blocks clicks outside itself, including Clerk's checkout drawer. */}
+
           <PricingTable for={orgId ? "organization" : "user"} />
         </DialogContent>
       </Dialog>

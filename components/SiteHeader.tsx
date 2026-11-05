@@ -4,6 +4,9 @@ import React from 'react'
 import { Button } from './ui/button';
 import { OrganizationSwitcher, Show, SignInButton, SignUpButton, useAuth, UserButton } from '@clerk/nextjs';
 import { usePathname } from 'next/dist/client/components/navigation';
+import PlanButton from './PlanButton';
+
+
 
 
 const SiteHeader = () => {
@@ -57,10 +60,12 @@ const SiteHeader = () => {
                 afterCreateOrganizationUrl="/dashboard"
                 afterSelectOrganizationUrl="/dashboard" 
             />
-            {isLandingPage && (
+            {isLandingPage ? (
                 <Button asChild size="sm">
                     <Link href="/dashboard">Dashboard</Link>
                 </Button>
+            ) : (
+                <PlanButton />
             )}
         </Show>
 

@@ -1,3 +1,5 @@
+import { WorkspaceStatus } from "./generated/prisma/enums";
+
 // Fields every workspace card needs, including what withLastActivity reads.
 export const workspaceCardSelect = {
   id: true,
@@ -29,4 +31,15 @@ export function withLastActivity<
       Math.max(...times.map((t) => t?.getTime() ?? 0)),
     ),
   };
+}
+
+export const WORKSPACE_STATUSES: { status: WorkspaceStatus; title: string }[] = [
+  { status: "PLANNING", title: "Planning" },
+  { status: "IN_PROGRESS", title: "In progress" },
+  { status: "IN_REVIEW", title: "In review" },
+  { status: "DONE", title: "Done" },
+];
+
+export function statusTitle(status: WorkspaceStatus) {
+  return WORKSPACE_STATUSES.find((s) => s.status === status)?.title ?? status;
 }

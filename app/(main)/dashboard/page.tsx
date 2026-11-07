@@ -8,7 +8,9 @@ import { RecentWorkspaces } from "./_components/RecentWorkspaces";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { KanbanSquare, Plus } from "lucide-react";
-import WorkspaceDialog from "@/components/WorkspaceDialog";
+
+import { DashboardPrompt } from "./_components/DashboardPrompt";
+import { WorkspaceDialog } from "@/components/WorkspaceDialog";
 
 const RECENT_COUNT = 4;
 
@@ -30,7 +32,7 @@ const DashboardPage = async () => {
     .slice(0, RECENT_COUNT);
   return (
     <div className="p-8">
-      {/* <DashboardPrompt /> */}
+      <DashboardPrompt />
 
       <section className="mx-auto max-w-6xl">
         <div className="mb-4 flex items-end justify-between gap-4">

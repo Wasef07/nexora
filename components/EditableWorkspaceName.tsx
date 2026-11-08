@@ -18,7 +18,7 @@ export function EditableWorkspaceName({
   const commit = async () => {
     setEditing(false);
     const trimmed = name.trim();
-    // Nothing to save — revert rather than firing a no-op mutation.
+    
     if (!trimmed || trimmed === initialName) {
       setName(initialName);
       return;

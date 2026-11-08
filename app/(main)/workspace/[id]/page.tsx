@@ -39,7 +39,6 @@ export default async function WorkspacePage({
   const { view: viewParam, prompt } = await searchParams;
   const view = parseViewMode(viewParam);
 
-  // 404 rather than 403 so outsiders can't tell whether a workspace id exists.
   if (!(await canAccessWorkspace(id))) notFound();
 
   const workspace = await prisma.workspace.findUnique({

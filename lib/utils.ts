@@ -19,7 +19,6 @@ const CURSOR_COLORS = [
   "#ef4444",
 ];
 
-// Same user always gets the same cursor color, across tabs, sessions, the doc and the canvas.
 export function colorForUser(userId: string) {
   let hash = 0;
   for (const char of userId) hash = (hash * 31 + char.charCodeAt(0)) | 0;

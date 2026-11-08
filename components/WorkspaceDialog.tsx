@@ -21,8 +21,6 @@ import {
 
 type EditableWorkspace = { id: string; name: string; description: string | null };
 
-// Creates a workspace, or edits one when `workspace` is passed. Opens from its own `trigger`,
-// or from outside via `open`/`onOpenChange` (e.g. a card's dropdown menu).
 export function WorkspaceDialog({
   workspace,
   trigger,
@@ -45,7 +43,6 @@ export function WorkspaceDialog({
         <DialogHeader>
           <DialogTitle>{workspace ? "Edit workspace" : "Create a workspace"}</DialogTitle>
         </DialogHeader>
-        {/* Mounted per open, so the fields always start from the current values. */}
         <WorkspaceForm workspace={workspace} onDone={() => setOpen(false)} />
       </DialogContent>
     </Dialog>

@@ -1,10 +1,6 @@
-// Free-plan limits and the upgrade dialog's messages, shared by server checks and client UI.
-// Paid limits come from Clerk plan features (see lib/billing.ts).
-
 export const FREE_WORKSPACE_LIMIT = 3;
 export const FREE_MONTHLY_PROMPTS = 20;
 
-// Returned by /api/agent when the owner's monthly prompts are used up.
 export const PROMPT_LIMIT_ERROR = "prompt_limit_reached";
 
 export const UPGRADE_REASONS = {

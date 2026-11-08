@@ -21,6 +21,12 @@ import {
 import { useSyncDemo } from "@tldraw/sync";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { saveCanvasContent } from "@/actions/canvas";
+import {
+  AddEntityTableButton,
+  ENTITY_TABLE_TYPE,
+  entityTableShapeUtils,
+  snapArrowBindingToRow,
+} from "@/components/EntityTable";
 import "tldraw/tldraw.css";
 
 const SAVE_DEBOUNCE_MS = 1000;
@@ -31,7 +37,7 @@ const components: TLComponents = {
   MainMenu: null,
   Toolbar: () => (
     <DefaultToolbar orientation="vertical">
-      {/* TODO: Add table button (ERD step) */}
+      <AddEntityTableButton />
       <DefaultToolbarContent />
     </DefaultToolbar>
   ),
@@ -80,7 +86,11 @@ const CanvasEditor = ({
     });
   }, [userId, userName]);
 
-  const store = useSyncDemo({ roomId: `outpost-${workspaceId}`, users });
+  const store = useSyncDemo({
+    roomId: `outpost-${workspaceId}`,
+    users,
+    shapeUtils: entityTableShapeUtils,
+  });
 
   const handleMount = (editor: Editor) => {
     setCanvasEditor(editor);
@@ -106,20 +116,36 @@ const CanvasEditor = ({
       { source: "user", scope: "document" },
     );
 
-    // Arrows drawn onto an ERD table snap to the nearest row (see snapArrowToRow.ts).
-    // editor.store.listen(
-    //   (entry) => {
-    //     for (const record of Object.values(entry.changes.added)) {
-    //       if (record.typeName === "binding" && record.type === "arrow") {
-    //         snapArrowBindingToRow(editor, record);
-    //       }
-    //     }
-    //   },
-    //   { source: "user", scope: "all" },
-    // );
+    const unlisten = editor.store.listen(
+      (entry) => {
+        for (const record of Object.values(entry.changes.added)) {
+          if (record.typeName === "binding" && record.type === "arrow") {
+            snapArrowBindingToRow(editor, record);
+          }
+        }
+
+        for (const [previous, next] of Object.values(entry.changes.updated)) {
+          if (
+            previous.typeName !== "shape" ||
+            next.typeName !== "shape" ||
+            next.type !== ENTITY_TABLE_TYPE
+          ) {
+            continue;
+          }
+
+          for (const binding of editor.getBindingsToShape(next.id, "arrow")) {
+            snapArrowBindingToRow(editor, binding, next);
+          }
+        }
+      },
+      { source: "user", scope: "all" },
+    );
 
     // Clear it on unmount (e.g. switching to the Document view) so nothing keeps a disposed editor.
-    return () => setCanvasEditor(null);
+    return () => {
+      unlisten();
+      setCanvasEditor(null);
+    };
   };
 
   return (
@@ -130,7 +156,7 @@ const CanvasEditor = ({
         onMount={handleMount}
         components={components}
         colorScheme="dark"
-        // shapeUtils={shapeUtils}
+        shapeUtils={entityTableShapeUtils}
         // licenseKey={process.env.NEXT_PUBLIC_TLDRAW_LICENSE_KEY}
       />
     </div>

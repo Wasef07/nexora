@@ -31,7 +31,6 @@ export function AddEntityTableButton() {
   return (
     <TldrawUiButton type="tool" title="Add table" onClick={addTable}>
       <Table2 />
-      <span>Add table</span>
     </TldrawUiButton>
   );
 }

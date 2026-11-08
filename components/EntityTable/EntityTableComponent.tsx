@@ -1,9 +1,11 @@
 "use client";
 
+import { GripVertical } from "lucide-react";
 import {
   useEffect,
   useState,
   type ChangeEvent,
+  type DragEvent,
   type FormEvent,
 } from "react";
 import {
@@ -77,6 +79,11 @@ export function EntityTableComponent({
   const [tableName, setTableName] = useState(shape.props.tableName);
   const [rows, setRows] = useState(shape.props.rows);
   const [editingRow, setEditingRow] = useState<EntityTableRow | null>(null);
+  const [draggedRowId, setDraggedRowId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{
+    rowId: string;
+    position: "above" | "below";
+  } | null>(null);
 
   useEffect(
     () =>
@@ -103,6 +110,35 @@ export function EntityTableComponent({
       type: ENTITY_TABLE_TYPE,
       props: { rows: nextRows },
     });
+  };
+
+  const getDropPosition = (
+    event: DragEvent<HTMLDivElement>,
+  ): "above" | "below" => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    return event.clientY < bounds.top + bounds.height / 2 ? "above" : "below";
+  };
+
+  const reorderRow = (
+    sourceId: string,
+    targetId: string,
+    position: "above" | "below",
+  ) => {
+    if (sourceId === targetId) return;
+
+    const nextRows = shape.props.rows.map((row) => ({ ...row }));
+    const sourceIndex = nextRows.findIndex((row) => row.id === sourceId);
+    const targetIndex = nextRows.findIndex((row) => row.id === targetId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+
+    const [draggedRow] = nextRows.splice(sourceIndex, 1);
+    const updatedTargetIndex = nextRows.findIndex((row) => row.id === targetId);
+    nextRows.splice(
+      updatedTargetIndex + (position === "below" ? 1 : 0),
+      0,
+      draggedRow,
+    );
+    updateRows(nextRows);
   };
 
   const saveTable = (event: FormEvent<HTMLFormElement>) => {
@@ -166,21 +202,67 @@ export function EntityTableComponent({
   return (
     <>
       <div
-        className="pointer-events-auto h-full w-full overflow-hidden rounded-lg border border-slate-700 bg-slate-950 text-slate-100 shadow-xl"
+        className="entity-table pointer-events-auto h-full w-full overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-xl"
         style={{ width: shape.props.w, height: shape.props.h }}
       >
-        <div className="flex h-[38px] items-center border-b border-slate-700 bg-slate-900 px-3 font-mono text-sm font-semibold text-slate-100">
+        <div className="flex h-[38px] items-center border-b border-border bg-muted/60 px-3 font-mono text-sm font-semibold text-foreground">
           <span className="truncate">{shape.props.tableName}</span>
         </div>
         {shape.props.rows.map((row) => (
           <div
             key={row.id}
-            className="flex h-[34px] items-center gap-2 border-b border-slate-800 px-3 last:border-b-0 hover:bg-slate-900/80"
+            className={`flex h-[34px] items-center gap-2 border-b border-border/70 px-2 last:border-b-0 hover:bg-accent/70 ${
+              dropTarget?.rowId === row.id
+                ? dropTarget.position === "above"
+                  ? "border-t-2 border-t-primary"
+                  : "border-b-2 border-b-primary"
+                : ""
+            }`}
+            onDragOver={(event) => {
+              if (!draggedRowId || draggedRowId === row.id) return;
+              event.preventDefault();
+              event.stopPropagation();
+              setDropTarget({
+                rowId: row.id,
+                position: getDropPosition(event),
+              });
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              const sourceId =
+                event.dataTransfer.getData("text/plain") || draggedRowId;
+              if (sourceId) {
+                reorderRow(sourceId, row.id, getDropPosition(event));
+              }
+              setDraggedRowId(null);
+              setDropTarget(null);
+            }}
           >
-            <span className="min-w-0 flex-1 truncate font-mono text-xs text-slate-200">
+            <button
+              type="button"
+              draggable
+              aria-label={`Reorder ${row.name}`}
+              className="flex h-6 w-4 shrink-0 cursor-grab items-center justify-center text-muted-foreground hover:text-primary active:cursor-grabbing"
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
+              onDragStart={(event) => {
+                event.stopPropagation();
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", row.id);
+                setDraggedRowId(row.id);
+              }}
+              onDragEnd={() => {
+                setDraggedRowId(null);
+                setDropTarget(null);
+              }}
+            >
+              <GripVertical aria-hidden="true" size={14} />
+            </button>
+            <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground">
               {row.name}
             </span>
-            <span className="truncate font-mono text-xs text-slate-500">
+            <span className="truncate font-mono text-xs text-muted-foreground">
               {row.dataType}
             </span>
             {row.isPK && <KeyBadge label="PK" />}
@@ -191,7 +273,7 @@ export function EntityTableComponent({
 
       <Dialog open={tableDialogOpen} onOpenChange={setTableDialogOpen}>
         <DialogContent
-          className="z-[10001]"
+          className="z-[10001] ring-primary/20"
           overlayClassName="z-[10000]"
           onPointerDownCapture={(event) => event.stopPropagation()}
         >
@@ -231,11 +313,11 @@ export function EntityTableComponent({
                   Add Column
                 </Button>
               </div>
-              <div className="max-h-56 space-y-2 overflow-y-auto">
+              <div className="entity-table-scrollbar max-h-56 space-y-2 overflow-y-auto">
                 {rows.map((row) => (
                   <div
                     key={row.id}
-                    className="space-y-2 rounded-md border p-2"
+                    className="space-y-2 rounded-md border border-border bg-background/40 p-2 transition-colors hover:border-primary/40"
                   >
                     <div className="grid grid-cols-2 gap-2">
                       <Input
@@ -267,6 +349,7 @@ export function EntityTableComponent({
                           <input
                             type="checkbox"
                             aria-label="Primary key"
+                            className="accent-primary focus-visible:outline-2 focus-visible:outline-ring"
                             checked={row.isPK}
                             onChange={(event) =>
                               updateDraftRow(row.id, {
@@ -280,6 +363,7 @@ export function EntityTableComponent({
                           <input
                             type="checkbox"
                             aria-label="Foreign key"
+                            className="accent-primary focus-visible:outline-2 focus-visible:outline-ring"
                             checked={row.isFK}
                             onChange={(event) =>
                               updateDraftRow(row.id, {
@@ -316,7 +400,7 @@ export function EntityTableComponent({
 
       <Dialog open={rowDialogOpen} onOpenChange={setRowDialogOpen}>
         <DialogContent
-          className="z-[10001]"
+          className="z-[10001] ring-primary/20"
           overlayClassName="z-[10000]"
           onPointerDownCapture={(event) => event.stopPropagation()}
         >
@@ -346,6 +430,7 @@ export function EntityTableComponent({
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
+                  className="accent-primary focus-visible:outline-2 focus-visible:outline-ring"
                   checked={editingRow?.isPK ?? false}
                   onChange={(event) => {
                     const isPK = event.currentTarget.checked;
@@ -357,6 +442,7 @@ export function EntityTableComponent({
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
+                  className="accent-primary focus-visible:outline-2 focus-visible:outline-ring"
                   checked={editingRow?.isFK ?? false}
                   onChange={(event) => {
                     const isFK = event.currentTarget.checked;

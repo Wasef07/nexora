@@ -2,7 +2,7 @@ import { T, type TLShape } from "tldraw";
 
 export const ENTITY_TABLE_TYPE = "entity-table";
 
-export type EntityTableRow = {
+export type EntityRow = {
   id: string;
   name: string;
   dataType: string;
@@ -14,7 +14,7 @@ export interface EntityTableShapeProps {
   w: number;
   h: number;
   tableName: string;
-  rows: EntityTableRow[];
+  rows: EntityRow[];
 }
 
 declare module "tldraw" {
@@ -43,9 +43,9 @@ export const entityTableProps = {
 export const ENTITY_TABLE_HEADER_HEIGHT = 38;
 export const ENTITY_TABLE_ROW_HEIGHT = 34;
 export const ENTITY_TABLE_MIN_WIDTH = 220;
-export const ENTITY_TABLE_WIDTH = 300;
+export const TABLE_WIDTH = 300;
 
-export const DEFAULT_ENTITY_TABLE_ROWS: EntityTableRow[] = [
+export const DEFAULT_ENTITY_TABLE_ROWS: EntityRow[] = [
   { id: "id", name: "id", dataType: "uuid", isPK: true, isFK: false },
   {
     id: "created_at",
@@ -56,6 +56,29 @@ export const DEFAULT_ENTITY_TABLE_ROWS: EntityTableRow[] = [
   },
 ];
 
-export function getEntityTableHeight(rowCount: number) {
-  return ENTITY_TABLE_HEADER_HEIGHT + rowCount * ENTITY_TABLE_ROW_HEIGHT;
+export function getTableHeight(rowCount: number) {
+  return (
+    ENTITY_TABLE_HEADER_HEIGHT +
+    Math.max(1, rowCount) * ENTITY_TABLE_ROW_HEIGHT
+  );
+}
+
+export function newRow(row: Partial<EntityRow> = {}): EntityRow {
+  return {
+    id: crypto.randomUUID(),
+    name: "",
+    dataType: "text",
+    isPK: false,
+    isFK: false,
+    ...row,
+  };
+}
+
+export function rowAnchorY(rowIndex: number, rowCount: number) {
+  return (
+    (ENTITY_TABLE_HEADER_HEIGHT +
+      rowIndex * ENTITY_TABLE_ROW_HEIGHT +
+      ENTITY_TABLE_ROW_HEIGHT / 2) /
+    getTableHeight(rowCount)
+  );
 }

@@ -6,12 +6,14 @@ export {
   ENTITY_TABLE_MIN_WIDTH,
   ENTITY_TABLE_ROW_HEIGHT,
   ENTITY_TABLE_TYPE,
-  ENTITY_TABLE_WIDTH,
+  TABLE_WIDTH,
   entityTableProps,
-  getEntityTableHeight,
+  getTableHeight,
+  newRow,
+  rowAnchorY,
 } from "./EntityTableShape";
 export type {
-  EntityTableRow,
+  EntityRow,
   EntityTableShape,
   EntityTableShapeProps,
 } from "./EntityTableShape";

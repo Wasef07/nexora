@@ -7,7 +7,6 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* Bind Tailwind's font-sans to the Geist variable next/font actually injects */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-display);
@@ -49,7 +48,6 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Outpost is dark-mode only, so :root and .dark share one palette — no light variant to maintain. */
 :root,
 .dark {
   --background: oklch(0.13 0.004 285);
@@ -58,7 +56,6 @@
   --card-foreground: oklch(0.97 0.002 285);
   --popover: oklch(0.18 0.005 285);
   --popover-foreground: oklch(0.97 0.002 285);
-  /* Amber accent — brand color, deliberately not the generic AI-purple */
   --primary: oklch(0.74 0.16 55);
   --primary-foreground: oklch(0.15 0.02 55);
   --secondary: oklch(0.24 0.006 285);
@@ -114,7 +111,6 @@
     font-family: var(--font-heading);
   }
 
-  /* Doc headings belong to the document, so they keep the editor's own font. */
   .bn-container :is(h1, h2, h3) {
     font-family: inherit;
   }
@@ -142,10 +138,6 @@
   }
 }
 
-/* Topographic contours (public/textures/topo.svg): Outpost's background identity, a nod to
-   mapping unknown territory. Opt-in per section, never over the doc or canvas editors.
-   The SVG is used as a mask over a color gradient, so lines glow amber at the center and cool to grey
-   at the edges; a second mask layer fades the whole map out softly. */
 @utility topo-bg {
   position: relative;
   isolation: isolate;
@@ -171,8 +163,6 @@
   }
 }
 
-/* Registration marks: small amber corner ticks just outside an element, like the crop marks on a
-   printed map sheet. Put it on a wrapper, since an overflow-hidden element would clip them. */
 @utility survey-frame {
   position: relative;
 
@@ -196,9 +186,6 @@
   }
 }
 
-/* Scroll-linked tilt: starts leaning back from the top, shifted up to close the gap the tilt
-   opens above it, and settles flat into its normal position over the first 500px of scroll. Pure CSS (scroll-driven animations); browsers without support, and anyone who
-   prefers reduced motion, just see it flat. */
 @keyframes scroll-tilt {
   from {
     transform: perspective(1400px) translateY(-70px) rotateX(22deg) scale(0.96);

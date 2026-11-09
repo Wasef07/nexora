@@ -23,8 +23,8 @@ import {
   ENTITY_TABLE_TYPE,
   ENTITY_TABLE_HEADER_HEIGHT,
   ENTITY_TABLE_ROW_HEIGHT,
-  getEntityTableHeight,
-  type EntityTableRow,
+  getTableHeight,
+  type EntityRow,
   type EntityTableShape,
 } from "./EntityTableShape";
 
@@ -78,7 +78,7 @@ export function EntityTableComponent({
   const [rowDialogOpen, setRowDialogOpen] = useState(false);
   const [tableName, setTableName] = useState(shape.props.tableName);
   const [rows, setRows] = useState(shape.props.rows);
-  const [editingRow, setEditingRow] = useState<EntityTableRow | null>(null);
+  const [editingRow, setEditingRow] = useState<EntityRow | null>(null);
   const [draggedRowId, setDraggedRowId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{
     rowId: string;
@@ -104,7 +104,7 @@ export function EntityTableComponent({
     [editor, shape.id, shape.props.rows, shape.props.tableName],
   );
 
-  const updateRows = (nextRows: EntityTableRow[]) => {
+  const updateRows = (nextRows: EntityRow[]) => {
     editor.updateShape({
       id: shape.id,
       type: ENTITY_TABLE_TYPE,
@@ -152,7 +152,7 @@ export function EntityTableComponent({
       props: {
         tableName: normalizedName,
         rows,
-        h: getEntityTableHeight(rows.length),
+        h: getTableHeight(rows.length),
       },
     });
     setTableDialogOpen(false);
@@ -160,7 +160,7 @@ export function EntityTableComponent({
 
   const updateDraftRow = (
     rowId: string,
-    update: Partial<EntityTableRow>,
+    update: Partial<EntityRow>,
   ) => {
     setRows((current) =>
       current.map((row) => (row.id === rowId ? { ...row, ...update } : row)),

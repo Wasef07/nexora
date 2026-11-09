@@ -4,7 +4,7 @@ import React from 'react'
 import { Button } from './ui/button';
 import { OrganizationSwitcher, Show, SignInButton, SignUpButton, useAuth, UserButton } from '@clerk/nextjs';
 import { usePathname } from 'next/dist/client/components/navigation';
-import PlanButton from './PlanButton';
+import { PlanButton } from './PlanButton';
 
 
 

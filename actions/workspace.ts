@@ -1,9 +1,10 @@
 "use server";
+import { randomBytes } from "node:crypto";
 import { FREE_WORKSPACE_LIMIT, LimitError } from "@/lib/plan-limits";
 
 import { checkUser } from "./check-user";
 import { scopeWhere } from "@/lib/workspace-scope";
-import { getEntitlements, workspaceOwnerSelect } from "@/lib/billing";
+import { getEntitlements, getWorkspaceOwnerId, workspaceOwnerSelect } from "@/lib/billing";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
@@ -25,7 +26,6 @@ export async function createWorkspace(
   const trimmedName = name.trim();
   if (!trimmedName) throw new Error("Workspace name is required");
 
-  // Belongs to whichever org is active; no active org means a personal workspace.
   const { orgId } = await auth();
   const scope = scopeWhere(orgId, user.id);
 
@@ -34,7 +34,6 @@ export async function createWorkspace(
     return { limit: "workspaces" };
   }
 
-  // New workspaces land at the top of the Planning column.
   const top = await prisma.workspace.findFirst({
     where: { status: "PLANNING", ...scope },
     orderBy: { position: "asc" },
@@ -85,13 +84,11 @@ export async function deleteWorkspace(workspaceId: string) {
     select: workspaceOwnerSelect,
   });
   const isCreator = workspace.creator.clerkId === userId;
-  // orgRole describes the active org only, so it counts only for a workspace in that org.
   const isOrgAdmin = orgRole === "org:admin" && workspace.clerkOrgId === orgId;
   if (!isCreator && !isOrgAdmin) {
     throw new Error("Only the creator or an org admin can delete this workspace");
   }
 
-  // Doc and canvas cascade-delete with the workspace; its agent prompts stay, so usage can't reset.
   await prisma.workspace.delete({ where: { id: workspaceId } });
   revalidateWorkspaceLists();
 }
@@ -106,4 +103,29 @@ export async function moveWorkspace(workspaceId: string, status: WorkspaceStatus
     where: { id: workspaceId },
     data: { status, position },
   });
+}
+
+export async function setWorkspaceSharing(
+  workspaceId: string,
+  enabled: boolean,
+): Promise<{ shareToken: string | null } | { limit: "sharing" }> {
+  if (typeof enabled !== "boolean") throw new Error("Invalid sharing setting");
+  if (!(await canAccessWorkspace(workspaceId))) throw new Error("Workspace not found");
+
+  if (enabled) {
+    const ownerId = await getWorkspaceOwnerId(workspaceId);
+    const { publicSharing } = await getEntitlements(ownerId);
+    if (!publicSharing) return { limit: "sharing" };
+  }
+
+  const workspace = await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: {
+      shareToken: enabled ? randomBytes(24).toString("base64url") : null,
+    },
+    select: { shareToken: true },
+  });
+
+  revalidatePath(`/workspace/${workspaceId}`);
+  return { shareToken: workspace.shareToken };
 }

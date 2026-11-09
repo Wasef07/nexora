@@ -15,7 +15,7 @@ import { useWorkspaceEditors } from "@/components/WorkspaceEditorsContext";
 import type { SupabaseYjsProvider } from "@/lib/supabase-yjs-provider";
 import { toBase64 } from "@/lib/base64";
 import { colorForUser } from "@/lib/utils";
-import { outpostDarkTheme } from "@/lib/blacknote-theme";
+import { nexoraDarkTheme } from "@/lib/blacknote-theme";
 
 const SAVE_DEBOUNCE_MS = 1000;
 
@@ -117,7 +117,7 @@ function CollaborativeEditor({
 
   return (
     <div className="h-full overflow-y-auto pt-6">
-      <BlockNoteView editor={editor} theme={outpostDarkTheme} />
+      <BlockNoteView editor={editor} theme={nexoraDarkTheme} />
     </div>
   );
 }

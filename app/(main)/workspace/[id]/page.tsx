@@ -6,14 +6,13 @@ import type { TLEditorSnapshot } from "tldraw";
 import { prisma } from "@/lib/prisma";
 import { canAccessWorkspace } from "@/lib/workspace-access";
 import { Button } from "@/components/ui/button";
-// import { AgentToggleButton } from "./_components/AgentToggleButton";
-// import { ShareDialog } from "./_components/ShareDialog";
+import { ShareDialog } from "./_components/ShareDialog";
 import {
   getEntitlements,
   workspaceOwnerId,
   workspaceOwnerSelect,
 } from "@/lib/billing";
-// import { PlanButton } from "@/components/PlanButton";
+import { PlanButton } from "@/components/PlanButton";
 import { WorkspaceEditorsProvider } from "@/components/WorkspaceEditorsContext";
 import {
   ResizableHandle,
@@ -24,6 +23,7 @@ import { EditableWorkspaceName } from "@/components/EditableWorkspaceName";
 import CanvasEditor from "./_components/CanvasEditor";
 import {DocEditor} from "../../../../components/DocEditorLoader";
 import "@blocknote/mantine/style.css";
+import { AgentToggleButton } from "./_components/AgentToggleButton";
 
 type ViewMode = "doc" | "canvas" | "both";
 
@@ -58,10 +58,9 @@ export default async function WorkspacePage({
   const showCanvas = view === "canvas" || view === "both";
 
   return (
-    // Lets header UI (agent panel, Share dialog) reach the live doc and canvas editors.
     <WorkspaceEditorsProvider>
       <div className="flex h-dvh flex-col overflow-hidden">
-        {/* Logo (back to dashboard) and name left, view switcher centered, actions right. */}
+        
         <header className="flex h-14 shrink-0 items-center border-b border-white/6 bg-background px-4">
           <div className="flex flex-1 items-center gap-3">
             <Link
@@ -104,7 +103,7 @@ export default async function WorkspacePage({
             ))}
           </div>
 
-          {/* <div className="flex flex-1 items-center justify-end gap-2">
+          <div className="flex flex-1 items-center justify-end gap-2">
             <PlanButton upgradeOnlyWhenOut />
             <ShareDialog
               workspaceId={id}
@@ -114,10 +113,9 @@ export default async function WorkspacePage({
               canExportPdf={entitlements.pdfExport}
             />
             <AgentToggleButton workspaceId={id} initialPrompt={typeof prompt === "string" ? prompt : undefined} />
-          </div> */}
+          </div>
         </header>
 
-        {/* key gives each view a fresh panel group, so an old layout isn't applied to new panels */}
         <ResizablePanelGroup
           key={view}
           orientation="horizontal"

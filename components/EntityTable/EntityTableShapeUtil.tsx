@@ -16,9 +16,9 @@ import {
   DEFAULT_ENTITY_TABLE_ROWS,
   ENTITY_TABLE_MIN_WIDTH,
   ENTITY_TABLE_TYPE,
-  ENTITY_TABLE_WIDTH,
+  TABLE_WIDTH,
   entityTableProps,
-  getEntityTableHeight,
+  getTableHeight,
   type EntityTableShape,
 } from "./EntityTableShape";
 
@@ -28,8 +28,8 @@ export class EntityTableShapeUtil extends BaseBoxShapeUtil<EntityTableShape> {
 
   getDefaultProps(): EntityTableShape["props"] {
     return {
-      w: ENTITY_TABLE_WIDTH,
-      h: getEntityTableHeight(DEFAULT_ENTITY_TABLE_ROWS.length),
+      w: TABLE_WIDTH,
+      h: getTableHeight(DEFAULT_ENTITY_TABLE_ROWS.length),
       tableName: "new_table",
       rows: DEFAULT_ENTITY_TABLE_ROWS.map((row) => ({ ...row })),
     };
@@ -38,7 +38,7 @@ export class EntityTableShapeUtil extends BaseBoxShapeUtil<EntityTableShape> {
   override getGeometry(shape: EntityTableShape) {
     return new Rectangle2d({
       width: shape.props.w,
-      height: getEntityTableHeight(shape.props.rows.length),
+      height: getTableHeight(shape.props.rows.length),
       isFilled: true,
     });
   }
@@ -49,7 +49,7 @@ export class EntityTableShapeUtil extends BaseBoxShapeUtil<EntityTableShape> {
       0,
       0,
       shape.props.w,
-      getEntityTableHeight(shape.props.rows.length),
+      getTableHeight(shape.props.rows.length),
     );
     return path;
   }
@@ -59,13 +59,13 @@ export class EntityTableShapeUtil extends BaseBoxShapeUtil<EntityTableShape> {
       ...shape,
       props: {
         ...shape.props,
-        h: getEntityTableHeight(shape.props.rows.length),
+        h: getTableHeight(shape.props.rows.length),
       },
     };
   }
 
   override onBeforeUpdate(_previous: EntityTableShape, next: EntityTableShape) {
-    const h = getEntityTableHeight(next.props.rows.length);
+    const h = getTableHeight(next.props.rows.length);
     if (next.props.h === h) return;
     return { ...next, props: { ...next.props, h } };
   }
@@ -121,7 +121,7 @@ export class EntityTableShapeUtil extends BaseBoxShapeUtil<EntityTableShape> {
         props: {
           ...shape.props,
           w: shape.props.w - delta,
-          h: getEntityTableHeight(shape.props.rows.length),
+          h: getTableHeight(shape.props.rows.length),
         },
       };
     }
@@ -131,7 +131,7 @@ export class EntityTableShapeUtil extends BaseBoxShapeUtil<EntityTableShape> {
       props: {
         ...shape.props,
         w: Math.max(ENTITY_TABLE_MIN_WIDTH, handle.x),
-        h: getEntityTableHeight(shape.props.rows.length),
+        h: getTableHeight(shape.props.rows.length),
       },
     };
   }

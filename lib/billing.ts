@@ -2,12 +2,10 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { FREE_MONTHLY_PROMPTS } from "@/lib/plan-limits";
 
-
 const PROMPT_FEATURES = [
   { feature: "agent_prompts_2000", perMember: 2000 },
   { feature: "agent_prompts_500", perMember: 500 },
 ];
-
 
 export const workspaceOwnerSelect = { clerkOrgId: true, creator: { select: { clerkId: true } } } as const;
 
@@ -20,7 +18,6 @@ export async function getWorkspaceOwnerId(workspaceId: string) {
   return workspaceOwnerId(workspace);
 }
 
-
 export async function getEntitlements(ownerId: string) {
   const clerk = await clerkClient();
   const isOrg = ownerId.startsWith("org_");
@@ -31,13 +28,13 @@ export async function getEntitlements(ownerId: string) {
       ? await clerk.billing.getOrganizationBillingSubscription(ownerId)
       : await clerk.billing.getUserBillingSubscription(ownerId);
     for (const item of subscription.subscriptionItems) {
-      
+
       if (item.status === "active" || item.status === "past_due") {
         item.plan?.features.forEach((feature) => features.add(feature.slug));
       }
     }
   } catch {
-    
+
   }
 
   const paid = PROMPT_FEATURES.find(({ feature }) => features.has(feature));
@@ -63,7 +60,6 @@ function startOfMonthUtc() {
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
-
 
 export async function getPromptUsage(ownerId: string) {
   const [{ promptLimit, isPaid }, used] = await Promise.all([

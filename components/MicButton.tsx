@@ -4,8 +4,6 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Mic, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// The browser's built-in speech recognition (Chrome, Edge, Safari). TypeScript doesn't ship
-// its types, so only the parts we use are declared here.
 type Recognition = {
   continuous: boolean;
   interimResults: boolean;
@@ -23,12 +21,11 @@ function getRecognition() {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition;
 }
 
-// Support is only knowable in the browser; the server renders no button (e.g. Firefox never shows it).
 const noopSubscribe = () => () => {};
 const isSupported = () => getRecognition() !== undefined;
 const isSupportedOnServer = () => false;
 
-// Dictates into a text box: what you say is appended to the current text, and stays editable.
+
 export function MicButton({
   value,
   onChange,

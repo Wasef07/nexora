@@ -87,15 +87,13 @@ const CanvasEditor = ({
   }, [userId, userName]);
 
   const store = useSyncDemo({
-    roomId: `outpost-${workspaceId}`,
+    roomId: `nexora-${workspaceId}`,
     users,
     shapeUtils: entityTableShapeUtils,
   });
 
   const handleMount = (editor: Editor) => {
     setCanvasEditor(editor);
-    // Seed from Postgres only when the room is empty, so a joining user doesn't overwrite
-    // what others have already drawn.
     if (initialSnapshot && editor.getCurrentPageShapeIds().size === 0) {
       editor.loadSnapshot(initialSnapshot);
     }
@@ -104,9 +102,6 @@ const CanvasEditor = ({
       () => {
         if (saveTimeout.current) clearTimeout(saveTimeout.current);
         saveTimeout.current = setTimeout(() => {
-          // getSnapshot() carries non-plain internals (schema is a class instance, not JSON) that
-          // occasionally fail to cross the Server Action boundary as "opaque temporary reference"
-          // errors — round-tripping through JSON strips those and leaves genuinely plain data.
           const plainSnapshot = JSON.parse(
             JSON.stringify(editor.getSnapshot()),
           ) as Prisma.InputJsonValue;
@@ -141,7 +136,7 @@ const CanvasEditor = ({
       { source: "user", scope: "all" },
     );
 
-    // Clear it on unmount (e.g. switching to the Document view) so nothing keeps a disposed editor.
+
     return () => {
       unlisten();
       setCanvasEditor(null);
@@ -157,7 +152,7 @@ const CanvasEditor = ({
         components={components}
         colorScheme="dark"
         shapeUtils={entityTableShapeUtils}
-        // licenseKey={process.env.NEXT_PUBLIC_TLDRAW_LICENSE_KEY}
+        licenseKey={process.env.NEXT_PUBLIC_TLDRAW_LICENSE_KEY}
       />
     </div>
   );

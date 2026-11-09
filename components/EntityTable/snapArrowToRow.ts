@@ -3,6 +3,7 @@ import {
   ENTITY_TABLE_HEADER_HEIGHT,
   ENTITY_TABLE_ROW_HEIGHT,
   ENTITY_TABLE_TYPE,
+  rowAnchorY,
   type EntityTableShape,
 } from "./EntityTableShape";
 
@@ -41,10 +42,7 @@ export function snapArrowBindingToRow(
 
   const row = rows[rowIndex];
   const normalizedY = row
-    ? (ENTITY_TABLE_HEADER_HEIGHT +
-        rowIndex * ENTITY_TABLE_ROW_HEIGHT +
-        ENTITY_TABLE_ROW_HEIGHT / 2) /
-      target.props.h
+    ? rowAnchorY(rowIndex, rows.length)
     : ENTITY_TABLE_HEADER_HEIGHT / 2 / target.props.h;
 
   editor.updateBinding({

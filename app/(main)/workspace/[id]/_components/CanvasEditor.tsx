@@ -21,6 +21,13 @@ import {
 import { useSyncDemo } from "@tldraw/sync";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { saveCanvasContent } from "@/actions/canvas";
+import {
+  AddEntityTableButton,
+  ENTITY_TABLE_TYPE,
+  entityTableShapeUtils,
+  snapArrowBindingToRow,
+  updateEntityTableRelationshipArrow,
+} from "@/components/EntityTable";
 import "tldraw/tldraw.css";
 
 const SAVE_DEBOUNCE_MS = 1000;
@@ -31,7 +38,7 @@ const components: TLComponents = {
   MainMenu: null,
   Toolbar: () => (
     <DefaultToolbar orientation="vertical">
-      {/* TODO: Add table button (ERD step) */}
+      <AddEntityTableButton />
       <DefaultToolbarContent />
     </DefaultToolbar>
   ),
@@ -80,12 +87,14 @@ const CanvasEditor = ({
     });
   }, [userId, userName]);
 
-  const store = useSyncDemo({ roomId: `outpost-${workspaceId}`, users });
+  const store = useSyncDemo({
+    roomId: `nexora-${workspaceId}`,
+    users,
+    shapeUtils: entityTableShapeUtils,
+  });
 
   const handleMount = (editor: Editor) => {
     setCanvasEditor(editor);
-    // Seed from Postgres only when the room is empty, so a joining user doesn't overwrite
-    // what others have already drawn.
     if (initialSnapshot && editor.getCurrentPageShapeIds().size === 0) {
       editor.loadSnapshot(initialSnapshot);
     }
@@ -94,9 +103,6 @@ const CanvasEditor = ({
       () => {
         if (saveTimeout.current) clearTimeout(saveTimeout.current);
         saveTimeout.current = setTimeout(() => {
-          // getSnapshot() carries non-plain internals (schema is a class instance, not JSON) that
-          // occasionally fail to cross the Server Action boundary as "opaque temporary reference"
-          // errors — round-tripping through JSON strips those and leaves genuinely plain data.
           const plainSnapshot = JSON.parse(
             JSON.stringify(editor.getSnapshot()),
           ) as Prisma.InputJsonValue;
@@ -106,20 +112,47 @@ const CanvasEditor = ({
       { source: "user", scope: "document" },
     );
 
-    // Arrows drawn onto an ERD table snap to the nearest row (see snapArrowToRow.ts).
-    // editor.store.listen(
-    //   (entry) => {
-    //     for (const record of Object.values(entry.changes.added)) {
-    //       if (record.typeName === "binding" && record.type === "arrow") {
-    //         snapArrowBindingToRow(editor, record);
-    //       }
-    //     }
-    //   },
-    //   { source: "user", scope: "all" },
-    // );
+    const unlisten = editor.store.listen(
+      (entry) => {
+        for (const record of Object.values(entry.changes.added)) {
+          if (record.typeName === "binding" && record.type === "arrow") {
+            snapArrowBindingToRow(editor, record);
+          }
+        }
 
-    // Clear it on unmount (e.g. switching to the Document view) so nothing keeps a disposed editor.
-    return () => setCanvasEditor(null);
+        for (const [, next] of Object.values(entry.changes.updated)) {
+          if (next.typeName === "binding" && next.type === "arrow") {
+            snapArrowBindingToRow(editor, next);
+          }
+        }
+
+        for (const [previous, next] of Object.values(entry.changes.updated)) {
+          if (
+            previous.typeName !== "shape" ||
+            next.typeName !== "shape" ||
+            next.type !== ENTITY_TABLE_TYPE
+          ) {
+            continue;
+          }
+
+          for (const binding of editor.getBindingsToShape(next.id, "arrow")) {
+            snapArrowBindingToRow(editor, binding);
+          }
+        }
+      },
+      { source: "all", scope: "all" },
+    );
+
+    for (const shape of editor.getCurrentPageShapes()) {
+      if (shape.type === "arrow") {
+        updateEntityTableRelationshipArrow(editor, shape.id);
+      }
+    }
+
+    return () => {
+      unlisten();
+      setCanvasEditor(null);
+    };
   };
 
   return (
@@ -130,8 +163,8 @@ const CanvasEditor = ({
         onMount={handleMount}
         components={components}
         colorScheme="dark"
-        // shapeUtils={shapeUtils}
-        // licenseKey={process.env.NEXT_PUBLIC_TLDRAW_LICENSE_KEY}
+        shapeUtils={entityTableShapeUtils}
+        licenseKey={process.env.NEXT_PUBLIC_TLDRAW_LICENSE_KEY}
       />
     </div>
   );

@@ -6,6 +6,7 @@ export const DocEditor = dynamic(() => import("@/components/DocEditor").then((m)
   ssr: false,
 });
 
-// export const DocViewer = dynamic(() => import("@/components/DocViewer").then((m) => m.DocViewer), {
-//   ssr: false,
-// });
+export const DocViewer = dynamic(
+  () => import("@/components/DocViewer").then((m) => m.DocViewer),
+  { ssr: false },
+);

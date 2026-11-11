@@ -5,8 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import AppShell from "@/components/AppShell";
 import { ClerkProvider } from "@clerk/nextjs";
-import { dark } from "@clerk/themes";
 import { UpgradeDialogProvider } from "@/components/UpgradeDialog";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <ClerkProvider appearance={{ theme: dark , variables: { colorPrimary: "oklch(0.74 0.16 55.4)" }, }}>
+    <ClerkProvider appearance={clerkAppearance} afterSignOutUrl="/">
       <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} h-full antialiased`}

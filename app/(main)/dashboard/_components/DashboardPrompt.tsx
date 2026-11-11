@@ -31,8 +31,6 @@ function nameFromPrompt(prompt: string) {
   return clean.charAt(0).toUpperCase() + clean.slice(1);
 }
 
-// Creates a workspace from the prompt and opens it; the workspace's agent sends the prompt
-// as its first message (see AgentToggleButton).
 export function DashboardPrompt() {
   const [prompt, setPrompt] = useState("");
   const router = useRouter();

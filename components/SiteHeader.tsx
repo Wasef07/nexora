@@ -3,8 +3,8 @@ import Link from 'next/link'
 import React from 'react'
 import { Button } from './ui/button';
 import { OrganizationSwitcher, Show, SignInButton, SignUpButton, useAuth, UserButton } from '@clerk/nextjs';
-import { usePathname } from 'next/dist/client/components/navigation';
-import PlanButton from './PlanButton';
+import { usePathname } from 'next/navigation';
+import { PlanButton } from './PlanButton';
 
 
 
@@ -18,6 +18,16 @@ const SiteHeader = () => {
     <Link
       href={isSignedIn && !isLandingPage ? "/dashboard" : "/"}
       className="flex items-center"
+      onClick={(event) => {
+        if (!isLandingPage) return;
+        event.preventDefault();
+        window.scrollTo({
+          top: 0,
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+        });
+      }}
     >
     <Image
         src="/brand/nexora-logo-navbar-dark.png"
@@ -31,7 +41,7 @@ const SiteHeader = () => {
 
     {isLandingPage && (
         <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
-            <Link href="#product" className="transition-colors hover:text-foreground">
+            <Link href="/#product" className="transition-colors hover:text-foreground">
                 Product
             </Link>
             <Link href="#how-it-works" className="transition-colors hover:text-foreground">
@@ -44,13 +54,21 @@ const SiteHeader = () => {
     )}
     <div className="flex items-center gap-4">
         <Show when="signed-out">
-            <SignInButton mode="modal">
+            <SignInButton
+              mode="modal"
+              forceRedirectUrl="/dashboard"
+              signUpForceRedirectUrl="/dashboard"
+            >
                 <Button variant="ghost" size="sm">
                     Sign In
                 </Button>
             </SignInButton>
 
-            <SignUpButton mode="modal">
+            <SignUpButton
+              mode="modal"
+              forceRedirectUrl="/dashboard"
+              signInForceRedirectUrl="/dashboard"
+            >
                 <Button size="sm">Get Started</Button>
             </SignUpButton>
         </Show>
@@ -67,9 +85,8 @@ const SiteHeader = () => {
             ) : (
                 <PlanButton />
             )}
+            <UserButton />
         </Show>
-
-        <UserButton/>
     </div>
   </header>
   )

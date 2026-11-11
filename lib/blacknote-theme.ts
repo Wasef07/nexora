@@ -1,4 +1,4 @@
-export const outpostDarkTheme = {
+export const nexoraDarkTheme = {
   colors: {
     editor: { text: "oklch(0.98 0 0)", background: "oklch(0.12 0 0)" },
     menu: { text: "oklch(0.98 0 0)", background: "oklch(0.17 0 0)" },

@@ -7,7 +7,6 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* Bind Tailwind's font-sans to the Geist variable next/font actually injects */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-display);
@@ -36,6 +35,8 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-highlight: var(--highlight);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -49,42 +50,61 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Outpost is dark-mode only, so :root and .dark share one palette — no light variant to maintain. */
 :root,
 .dark {
-  --background: oklch(0.13 0.004 285);
-  --foreground: oklch(0.97 0.002 285);
-  --card: oklch(0.17 0.005 285);
-  --card-foreground: oklch(0.97 0.002 285);
-  --popover: oklch(0.18 0.005 285);
-  --popover-foreground: oklch(0.97 0.002 285);
-  /* Amber accent — brand color, deliberately not the generic AI-purple */
-  --primary: oklch(0.74 0.16 55);
-  --primary-foreground: oklch(0.15 0.02 55);
-  --secondary: oklch(0.24 0.006 285);
-  --secondary-foreground: oklch(0.97 0.002 285);
-  --muted: oklch(0.22 0.006 285);
-  --muted-foreground: oklch(0.64 0.01 285);
-  --accent: oklch(0.27 0.02 55);
-  --accent-foreground: oklch(0.93 0.03 60);
-  --destructive: oklch(0.65 0.22 25);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.74 0.16 55 / 50%);
-  --chart-1: oklch(0.74 0.16 55);
-  --chart-2: oklch(0.6 0.14 40);
-  --chart-3: oklch(0.5 0.02 285);
-  --chart-4: oklch(0.4 0.01 285);
-  --chart-5: oklch(0.3 0.01 285);
+  --background: #030407;
+  --foreground: #ffffff;
+
+  --card: #0b0d12;
+  --card-foreground: #ffffff;
+
+  --popover: #11151d;
+  --popover-foreground: #ffffff;
+
+  --primary: #1558c9;
+  --primary-foreground: #ffffff;
+  --highlight: #f5a524;
+  --highlight-foreground: #030407;
+
+  --secondary: #252a35;
+  --secondary-foreground: #ffffff;
+
+  --muted: #171b24;
+  --muted-foreground: #929bad;
+
+  --accent: #101b30;
+  --accent-foreground: #ffffff;
+
+  --destructive: #ef4444;
+
+  --border: #ffffff1a;
+  --input: #ffffff20;
+  --ring: #1558c980;
+
+  --chart-1: #1558c9;
+  --chart-2: #5688df;
+  --chart-3: #5688df;
+  --chart-4: #8ba9e8;
+  --chart-5: #687386;
+
   --radius: 0.625rem;
-  --sidebar: oklch(0.15 0.004 285);
-  --sidebar-foreground: oklch(0.97 0.002 285);
-  --sidebar-primary: oklch(0.74 0.16 55);
-  --sidebar-primary-foreground: oklch(0.15 0.02 55);
-  --sidebar-accent: oklch(0.22 0.006 285);
-  --sidebar-accent-foreground: oklch(0.97 0.002 285);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.74 0.16 55 / 50%);
+
+  --sidebar: #080b11;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #1558c9;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #252a35;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #ffffff1a;
+  --sidebar-ring: #1558c980;
+}
+
+.tl-container:has(.entity-table) {
+  --tl-color-selection-fill: color-mix(in oklch, var(--primary) 20%, transparent);
+  --tl-color-selection-stroke: var(--primary);
+  --tl-color-selected: var(--primary);
+  --tl-color-focus: var(--primary);
+  --tl-color-primary: var(--primary);
 }
 
 @layer base {
@@ -106,16 +126,39 @@
     font-family: var(--font-heading);
   }
 
-  /* Doc headings belong to the document, so they keep the editor's own font. */
   .bn-container :is(h1, h2, h3) {
     font-family: inherit;
   }
 }
 
-/* Topographic contours (public/textures/topo.svg): Outpost's background identity, a nod to
-   mapping unknown territory. Opt-in per section, never over the doc or canvas editors.
-   The SVG is used as a mask over a color gradient, so lines glow amber at the center and cool to grey
-   at the edges; a second mask layer fades the whole map out softly. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@utility entity-table-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--primary) 55%, transparent) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: color-mix(in oklch, var(--primary) 55%, transparent);
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklch, var(--primary) 75%, transparent);
+  }
+}
+
 @utility topo-bg {
   position: relative;
   isolation: isolate;
@@ -126,10 +169,12 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background: radial-gradient(ellipse 40% 50% at 50% 42%,
-        oklch(0.78 0.16 60),
-        oklch(0.74 0.16 55 / 0.55) 45%,
-        oklch(1 0 0 / 0.45) 75%);
+    background: radial-gradient(
+      ellipse 40% 50% at 50% 42%,
+      #1558c999,
+      #1558c966 45%,
+      transparent 75%
+    );
     mask-image:
       url("/textures/topo.svg"),
       radial-gradient(ellipse 75% 70% at 50% 45%, black 30%, transparent 85%);
@@ -137,17 +182,15 @@
     mask-position: center;
     mask-repeat: no-repeat;
     mask-composite: intersect;
-    opacity: 0.55;
+    opacity: 0.6;
   }
 }
 
-/* Registration marks: small amber corner ticks just outside an element, like the crop marks on a
-   printed map sheet. Put it on a wrapper, since an overflow-hidden element would clip them. */
 @utility survey-frame {
   position: relative;
 
   &::after {
-    --mark: oklch(0.74 0.16 55 / 0.7);
+    --mark: #1558c9b3;
     --size: 14px;
     content: "";
     position: absolute;
@@ -166,9 +209,6 @@
   }
 }
 
-/* Scroll-linked tilt: starts leaning back from the top, shifted up to close the gap the tilt
-   opens above it, and settles flat into its normal position over the first 500px of scroll. Pure CSS (scroll-driven animations); browsers without support, and anyone who
-   prefers reduced motion, just see it flat. */
 @keyframes scroll-tilt {
   from {
     transform: perspective(1400px) translateY(-70px) rotateX(22deg) scale(0.96);

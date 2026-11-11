@@ -100,7 +100,11 @@
 }
 
 .tl-container:has(.entity-table) {
-  --tl-color-selection-fill: color-mix(in oklch, var(--primary) 20%, transparent);
+  --tl-color-selection-fill: color-mix(
+    in oklch,
+    var(--primary) 20%,
+    transparent
+  );
   --tl-color-selection-stroke: var(--primary);
   --tl-color-selected: var(--primary);
   --tl-color-focus: var(--primary);
@@ -139,7 +143,8 @@
 
 @utility entity-table-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in oklch, var(--primary) 55%, transparent) transparent;
+  scrollbar-color: color-mix(in oklch, var(--primary) 55%, transparent)
+    transparent;
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -170,18 +175,15 @@
     z-index: -1;
     pointer-events: none;
     background: radial-gradient(
-      ellipse 40% 50% at 50% 42%,
+      ellipse 100% 80% at 50% 50%,
       #1558c999,
-      #1558c966 45%,
-      transparent 75%
+      #1558c966 50%,
+      #1558c933 100%
     );
-    mask-image:
-      url("/textures/topo.svg"),
-      radial-gradient(ellipse 75% 70% at 50% 45%, black 30%, transparent 85%);
-    mask-size: cover, 100% 100%;
+    mask-image: url("/textures/topo.svg");
+    mask-size: cover;
     mask-position: center;
     mask-repeat: no-repeat;
-    mask-composite: intersect;
     opacity: 0.6;
   }
 }

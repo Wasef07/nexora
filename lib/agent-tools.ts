@@ -121,8 +121,6 @@ export type ToolResult = { success: true } | { success: false; error: string };
 export const ok = (): ToolResult => ({ success: true });
 export const fail = (error: string): ToolResult => ({ success: false, error });
 
-// Gemini sometimes escapes newlines as a literal "\n" inside tool arguments. Only unescape when
-// the text has no real line breaks, so code that genuinely contains "\n" stays intact.
 export function normalizeModelText(text: string) {
   return text.includes("\n") ? text : text.replace(/\\n/g, "\n");
 }

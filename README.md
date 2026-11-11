@@ -1,11 +1,13 @@
 # Nexora
 
 **Your AI workspace for intelligent agents and automated workflows.**
+
 [Live demo](https://nexora-three-dusky.vercel.app) · [Report a bug](https://github.com/Wasef07/nexora/issues)
 
 Nexora is an agentic workspace where an AI agent works alongside your team. Describe what you want in plain language, and the agent draws it on an infinite canvas, writes it up as a spec, and keeps every workspace organized on a shared Kanban board.
 
 ## Features
+
 - **Canvas:** an infinite whiteboard where the agent draws flowcharts, ERDs, architecture diagrams and org charts shape by shape, and edits them in place when you ask.
 - **Docs:** a block editor where the agent turns a diagram into a written spec, and rewrites or summarizes sections on command.
 - **Team board:** a Kanban board for every workspace in your org, with live cursors so teammates can work together.
@@ -105,10 +107,12 @@ The app is deployed on [Vercel](https://vercel.com).
 4. Run `npx prisma migrate deploy` against your production database.
 
 ## What I learned
+- Building an infinite canvas for visual planning and Notion-style document editor
 - Building a custom tldraw shape with inline editing, and stopping keyboard and pointer events from clashing with the canvas.
 - Binding arrows to table rows by ID, so relationships survive moving, resizing and reordering.
-- Using Clerk's modal sign-in and a shared appearance config so authentication matches the product theme.
-- Designing a small token-based theme (blue, black and graphite, with amber as a rare accent) and applying it across the whole app.
+- Adding real-time collaboration so multiple people can work together
+- Building agent tools that let the AI create and edit things on the canvas
+- Designing prompt usage logic to control how the agent behaves
 
 ## Author
 Made with ❤️ by [Raze](https://www.linkedin.com/in/sk-wasef-mostafa/)

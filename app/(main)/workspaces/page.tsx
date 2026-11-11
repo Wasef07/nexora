@@ -12,7 +12,7 @@ import { WorkspaceDialog } from "@/components/WorkspaceDialog";
 
 export default async function WorkspacesPage() {
   const user = await checkUser();
-  if (!user) redirect("/sign-in");
+  if (!user) redirect("/");
 
   const { orgName, where } = await getWorkspaceScope(user.id);
   const workspaces = await prisma.workspace.findMany({

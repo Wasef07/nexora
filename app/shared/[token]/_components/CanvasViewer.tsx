@@ -32,13 +32,12 @@ export function CanvasViewer({
   );
 
   return (
-    <div className="h-full min-h-0 [&_.tl-container]:pointer-events-none">
+    <div className="shared-canvas-viewer h-full min-h-0 min-w-0 overflow-hidden [&_.tlui-offline-indicator]:hidden [&_.tlui-page-menu__create-button]:hidden">
       <Tldraw
         store={store}
         onMount={(editor) => {
           editor.zoomToFit();
         }}
-        hideUi
         shapeUtils={entityTableShapeUtils}
         colorScheme="dark"
         licenseKey={process.env.NEXT_PUBLIC_TLDRAW_LICENSE_KEY}

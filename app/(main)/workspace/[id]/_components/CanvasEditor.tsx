@@ -26,6 +26,7 @@ import {
   ENTITY_TABLE_TYPE,
   entityTableShapeUtils,
   snapArrowBindingToRow,
+  updateEntityTableRelationshipArrow,
 } from "@/components/EntityTable";
 import "tldraw/tldraw.css";
 
@@ -119,6 +120,12 @@ const CanvasEditor = ({
           }
         }
 
+        for (const [, next] of Object.values(entry.changes.updated)) {
+          if (next.typeName === "binding" && next.type === "arrow") {
+            snapArrowBindingToRow(editor, next);
+          }
+        }
+
         for (const [previous, next] of Object.values(entry.changes.updated)) {
           if (
             previous.typeName !== "shape" ||
@@ -129,13 +136,18 @@ const CanvasEditor = ({
           }
 
           for (const binding of editor.getBindingsToShape(next.id, "arrow")) {
-            snapArrowBindingToRow(editor, binding, next);
+            snapArrowBindingToRow(editor, binding);
           }
         }
       },
-      { source: "user", scope: "all" },
+      { source: "all", scope: "all" },
     );
 
+    for (const shape of editor.getCurrentPageShapes()) {
+      if (shape.type === "arrow") {
+        updateEntityTableRelationshipArrow(editor, shape.id);
+      }
+    }
 
     return () => {
       unlisten();

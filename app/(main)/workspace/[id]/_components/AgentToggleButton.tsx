@@ -27,7 +27,7 @@ export function AgentToggleButton({ workspaceId, initialPrompt }: { workspaceId:
 
   return (
     <>
-      <Button size="sm" className="gap-1.5" onClick={() => setIsOpen((v) => !v)}>
+      <Button size="sm" className="gap-2" onClick={() => setIsOpen((v) => !v)}>
         {isOpen ? (
           <>
             <X className="size-4" />
@@ -35,7 +35,7 @@ export function AgentToggleButton({ workspaceId, initialPrompt }: { workspaceId:
           </>
         ) : (
           <>
-            <Image src="/brand/mascot.png" alt="" width={16} height={16} className="size-4" />
+            <Image src="/brand/mascot-dark.png" alt="" width={20} height={20} className="size-5" />
             Ask Agent
           </>
         )}

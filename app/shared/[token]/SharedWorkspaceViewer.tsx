@@ -38,12 +38,23 @@ export function SharedWorkspaceViewer({
           View only
         </span>
       </header>
-      <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
-        <ResizablePanel defaultSize={50} minSize={20} className="min-w-0 overflow-auto">
+      <ResizablePanelGroup
+        orientation="horizontal"
+        className="min-h-0 min-w-0 flex-1 overflow-hidden"
+      >
+        <ResizablePanel
+          defaultSize={50}
+          minSize={20}
+          className="min-h-0 min-w-0 overflow-auto"
+        >
           <DocViewer content={docContent} />
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={50} minSize={20} className="min-w-0">
+        <ResizablePanel
+          defaultSize={50}
+          minSize={20}
+          className="min-h-0 min-w-0 overflow-hidden"
+        >
           <CanvasViewer snapshot={canvasSnapshot} />
         </ResizablePanel>
       </ResizablePanelGroup>

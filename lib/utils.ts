@@ -9,14 +9,14 @@ export function submitOnEnter(submit: () => void) {
 }
 
 const CURSOR_COLORS = [
-  "#f97316",
-  "#3b82f6",
-  "#22c55e",
-  "#a855f7",
-  "#ec4899",
-  "#eab308",
-  "#14b8a6",
-  "#ef4444",
+  "#1558c9",
+  "#3d70c4",
+  "#5688df",
+  "#6f8fd1",
+  "#8ba9e8",
+  "#b8c8e8",
+  "#64748b",
+  "#929bad",
 ];
 
 export function colorForUser(userId: string) {

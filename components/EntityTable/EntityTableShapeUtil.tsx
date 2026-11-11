@@ -10,7 +10,6 @@ import {
 } from "tldraw";
 import {
   EntityTableComponent,
-  requestEntityTableEdit,
 } from "./EntityTableComponent";
 import {
   DEFAULT_ENTITY_TABLE_ROWS,
@@ -72,11 +71,6 @@ export class EntityTableShapeUtil extends BaseBoxShapeUtil<EntityTableShape> {
 
   override canBind() {
     return true;
-  }
-
-  override onDoubleClick(shape: EntityTableShape) {
-    requestEntityTableEdit(this.editor, shape);
-    return { id: shape.id, type: ENTITY_TABLE_TYPE } as const;
   }
 
   override hideResizeHandles() {

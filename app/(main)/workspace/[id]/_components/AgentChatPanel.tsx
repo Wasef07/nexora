@@ -1,21 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Send, Square, Wand2 } from "lucide-react";
 import { isToolUIPart, isDynamicToolUIPart } from "ai";
 import type { WorkspaceAgentChat } from "@/hooks/use-workspace-agent-chat";
 import { Button } from "@/components/ui/button";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import { MicButton } from "@/components/MicButton";
 import { useUpgradeDialog } from "@/components/UpgradeDialog";
 import { PROMPT_LIMIT_ERROR, UPGRADE_REASONS } from "@/lib/plan-limits";
 import { submitOnEnter } from "@/lib/utils";
 
-export function AgentChatPanel({ chat, isReady }: { chat: WorkspaceAgentChat; isReady: boolean }) {
+export function AgentChatPanel({
+  chat,
+  isReady,
+}: {
+  chat: WorkspaceAgentChat;
+  isReady: boolean;
+}) {
   const [input, setInput] = useState("");
   const { messages, sendMessage, stop, status, error } = chat;
   const openUpgrade = useUpgradeDialog();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 192)}px`; // 192px = max-h-48
+  }, [input]);
 
   const isBusy = status === "submitted" || status === "streaming";
 
@@ -38,15 +56,22 @@ export function AgentChatPanel({ chat, isReady }: { chat: WorkspaceAgentChat; is
           className="pointer-events-auto flex flex-col border-l border-white/10 bg-card shadow-2xl"
         >
           <div className="flex h-14 shrink-0 items-center gap-2 border-b border-white/6 px-4 text-sm font-medium">
-            <Image src="/brand/mascot-dark.png" alt="" width={18} height={18} className="size-4.5" />
-            Outpost Agent
+            <Image
+              src="/brand/mascot-dark.png"
+              alt=""
+              width={18}
+              height={18}
+              className="size-4.5"
+            />
+            Nexora Agent
           </div>
 
           <div className="flex-1 space-y-3 overflow-y-auto p-4">
             {messages.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Ask the agent to draw a diagram, write or edit the doc, or both. Say
-                &ldquo;in the doc&rdquo; or &ldquo;on the canvas&rdquo; to keep it to one side.
+                Ask the agent to draw a diagram, write or edit the doc, or both.
+                Say &ldquo;in the doc&rdquo; or &ldquo;on the canvas&rdquo; to
+                keep it to one side.
               </p>
             ) : (
               messages.map((message) => (
@@ -93,7 +118,8 @@ export function AgentChatPanel({ chat, isReady }: { chat: WorkspaceAgentChat; is
                           key={i}
                           className="rounded-md bg-black/20 px-2 py-1 text-xs text-muted-foreground"
                         >
-                          {part.state === "output-available" ? "✓" : "…"} {toolName}
+                          {part.state === "output-available" ? "✓" : "…"}{" "}
+                          {toolName}
                         </div>
                       );
                     }
@@ -131,24 +157,39 @@ export function AgentChatPanel({ chat, isReady }: { chat: WorkspaceAgentChat; is
               </p>
             )}
           </div>
-
           <div className="flex shrink-0 items-end gap-2 border-t border-white/6 p-3">
             <textarea
+              ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={submitOnEnter(handleSend)}
               placeholder="Ask the agent..."
               rows={1}
               disabled={!isReady}
-              className="max-h-32 flex-1 resize-none overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-md border border-white/10 bg-transparent px-3 py-2 text-sm outline-none focus:border-ring disabled:opacity-50"
+              className="min-h-11 max-h-48 flex-1 resize-none overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-xl border border-white/10 bg-transparent px-4 py-3 text-sm leading-relaxed outline-none transition-colors placeholder:text-muted-foreground focus:border-ring disabled:opacity-50"
             />
-            <MicButton value={input} onChange={setInput} disabled={!isReady} />
+            <MicButton
+              value={input}
+              onChange={setInput}
+              disabled={!isReady}
+              className="size-11 rounded-xl"
+            />
             {isBusy ? (
-              <Button size="icon" variant="secondary" onClick={stop}>
+              <Button
+                size="icon"
+                variant="secondary"
+                className="size-11 rounded-xl"
+                onClick={stop}
+              >
                 <Square className="size-3.5" />
               </Button>
             ) : (
-              <Button size="icon" onClick={handleSend} disabled={!input.trim() || !isReady}>
+              <Button
+                size="icon"
+                className="size-11 rounded-xl"
+                onClick={handleSend}
+                disabled={!input.trim() || !isReady}
+              >
                 <Send className="size-4" />
               </Button>
             )}

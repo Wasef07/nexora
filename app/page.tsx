@@ -1,25 +1,13 @@
-import Link from "next/link";
 import Image from "next/image";
 import { landingContent } from "@/app/_data/landing";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PricingTable } from "@clerk/nextjs";
+import { clerkAppearance } from "@/lib/clerk-appearance";
+import { LandingAuthButton } from "@/components/LandingAuthButton";
+import { LandingFooter } from "@/components/LandingFooter";
 
 const PRICING_TAB =
   "rounded-full px-5 py-1.5 data-active:bg-primary data-active:text-primary-foreground dark:data-active:bg-primary dark:data-active:text-primary-foreground";
-
-function ArrowRight() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-      <path
-        d="M5 12h14m-6-6 6 6-6 6"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 function FeatureIcon({ name }: { name: string }) {
   const common = {
@@ -136,14 +124,14 @@ function CanvasMockup() {
             width="164"
             height="46"
             rx="23"
-            fill="#302117"
-            stroke="#C7803D"
+            fill="#101B30"
+            stroke="#1558C9"
             strokeWidth="1.7"
           />
           <text
             x="300"
             y="63"
-            fill="#F8F4EF"
+            fill="#FFFFFF"
             fontSize="14"
             fontWeight="600"
             textAnchor="middle"
@@ -372,7 +360,7 @@ function FeaturePreview({ id }: { id: string }) {
 }
 
 export default function HomePage() {
-  const { hero, audience, features, howItWorks, pricing, closing, footer } =
+  const { hero, audience, features, howItWorks, pricing, closing } =
     landingContent;
 
   return (
@@ -395,13 +383,10 @@ export default function HomePage() {
           </p>
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              href="/signup"
+            <LandingAuthButton
+              label={hero.primaryAction}
               className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:brightness-110 sm:w-auto"
-            >
-              {hero.primaryAction}
-              <ArrowRight />
-            </Link>
+            />
             <a
               href="#how-it-works"
               className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-6 py-3 text-sm font-medium text-foreground transition hover:border-white/20 hover:bg-white/[0.06] sm:w-auto"
@@ -451,8 +436,8 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="px-5 py-20 sm:px-8 sm:py-28 lg:py-32">
-        <div className="mx-auto max-w-6xl">
+      <section id="product" className="scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28 lg:py-32">
+        <div id="features" className="mx-auto max-w-6xl">
           <div className="mx-auto mb-16 max-w-3xl text-center sm:mb-24">
             <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.22em] text-primary">
               One connected workspace
@@ -470,7 +455,8 @@ export default function HomePage() {
             {features.surfaces.map((surface, index) => (
               <article
                 key={surface.id}
-                className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16"
+                id={`product-${surface.id}`}
+                className="scroll-mt-24 grid items-center gap-10 lg:grid-cols-2 lg:gap-16"
               >
                 <div
                   className={
@@ -579,14 +565,14 @@ export default function HomePage() {
             </TabsList>
 
             <TabsContent value="user" className="w-full">
-              <PricingTable for="user" />
+              <PricingTable for="user" appearance={clerkAppearance} />
             </TabsContent>
 
             <TabsContent
               value="organization"
               className="w-full [&_.grid]:!grid-cols-3"
             >
-              <PricingTable for="organization" />
+              <PricingTable for="organization" appearance={clerkAppearance} />
             </TabsContent>
           </Tabs>
         </div>
@@ -611,19 +597,14 @@ export default function HomePage() {
           <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
             {closing.description}
           </p>
-          <Link
-            href="/signup"
+          <LandingAuthButton
+            label={closing.action}
             className="mt-8 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:brightness-110"
-          >
-            {closing.action}
-            <ArrowRight />
-          </Link>
+          />
         </div>
       </section>
 
-      <footer className="border-t border-white/[0.07] px-5 py-6 text-center text-xs text-muted-foreground sm:px-8">
-        {footer}
-      </footer>
+      <LandingFooter />
     </main>
   );
 }

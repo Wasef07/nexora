@@ -70,9 +70,10 @@ export default async function WorkspacePage({
               <Image
                 src="/brand/mascot-dark.png"
                 alt="Back to dashboard"
-                width={24}
-                height={24}
-                className="size-6"
+                width={64}
+                height={64}
+                sizes="32px"
+                className="size-8 object-contain"
               />
             </Link>
             <EditableWorkspaceName

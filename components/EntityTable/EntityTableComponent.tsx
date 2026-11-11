@@ -1,71 +1,36 @@
 "use client";
 
-import { GripVertical } from "lucide-react";
 import {
+  ChevronDown,
+  ChevronUp,
+  KeyRound,
+  Link2,
+  Plus,
+  Table2,
+  Trash2,
+} from "lucide-react";
+import {
+  useCallback,
   useEffect,
+  useRef,
   useState,
-  type ChangeEvent,
-  type DragEvent,
-  type FormEvent,
+  type FocusEvent,
+  type KeyboardEvent,
+  type PointerEvent,
 } from "react";
+import { useValue, type Editor } from "tldraw";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import type { Editor } from "tldraw";
-import {
-  ENTITY_TABLE_TYPE,
   ENTITY_TABLE_HEADER_HEIGHT,
   ENTITY_TABLE_ROW_HEIGHT,
+  ENTITY_TABLE_TYPE,
   getTableHeight,
+  newRow,
   type EntityRow,
   type EntityTableShape,
 } from "./EntityTableShape";
 
-type EntityTableEditRequest = (rowId: string | null) => void;
-const editRequests = new WeakMap<Editor, Map<string, EntityTableEditRequest>>();
-
-export function registerEntityTableEditRequest(
-  editor: Editor,
-  shapeId: EntityTableShape["id"],
-  requestEdit: EntityTableEditRequest,
-) {
-  let shapeRequests = editRequests.get(editor);
-  if (!shapeRequests) {
-    shapeRequests = new Map();
-    editRequests.set(editor, shapeRequests);
-  }
-  shapeRequests.set(shapeId, requestEdit);
-
-  return () => {
-    shapeRequests?.delete(shapeId);
-    if (shapeRequests?.size === 0) editRequests.delete(editor);
-  };
-}
-
-export function requestEntityTableEdit(
-  editor: Editor,
-  shape: EntityTableShape,
-) {
-  const point = editor.getPointInShapeSpace(
-    shape,
-    editor.inputs.getCurrentPagePoint(),
-  );
-  const rowIndex = Math.floor(
-    (point.y - ENTITY_TABLE_HEADER_HEIGHT) / ENTITY_TABLE_ROW_HEIGHT,
-  );
-  const row = point.y >= ENTITY_TABLE_HEADER_HEIGHT
-    ? shape.props.rows[rowIndex]
-    : undefined;
-
-  editRequests.get(editor)?.get(shape.id)?.(row?.id ?? null);
-}
+type InlineKeyEvent = KeyboardEvent<HTMLInputElement>;
+type InlinePointerEvent = PointerEvent<HTMLInputElement>;
 
 export function EntityTableComponent({
   shape,
@@ -74,400 +39,519 @@ export function EntityTableComponent({
   shape: EntityTableShape;
   editor: Editor;
 }) {
-  const [tableDialogOpen, setTableDialogOpen] = useState(false);
-  const [rowDialogOpen, setRowDialogOpen] = useState(false);
-  const [tableName, setTableName] = useState(shape.props.tableName);
-  const [rows, setRows] = useState(shape.props.rows);
-  const [editingRow, setEditingRow] = useState<EntityRow | null>(null);
-  const [draggedRowId, setDraggedRowId] = useState<string | null>(null);
-  const [dropTarget, setDropTarget] = useState<{
-    rowId: string;
-    position: "above" | "below";
-  } | null>(null);
-
-  useEffect(
-    () =>
-      registerEntityTableEditRequest(editor, shape.id, (rowId) => {
-        if (rowId) {
-          const row = shape.props.rows.find((item) => item.id === rowId);
-          if (row) {
-            setEditingRow({ ...row });
-            setRowDialogOpen(true);
-            return;
-          }
-        }
-
-        setTableName(shape.props.tableName);
-        setRows(shape.props.rows.map((row) => ({ ...row })));
-        setTableDialogOpen(true);
-      }),
-    [editor, shape.id, shape.props.rows, shape.props.tableName],
+  const isSelected = useValue(
+    "entity table selected",
+    () => editor.getSelectedShapeIds().includes(shape.id),
+    [editor, shape.id],
   );
+  const [editingTableName, setEditingTableName] = useState(false);
+  const [tableNameDraft, setTableNameDraft] = useState(shape.props.tableName);
+  const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [editingRowDraft, setEditingRowDraft] = useState<EntityRow | null>(
+    null,
+  );
+  const [newRowId, setNewRowId] = useState<string | null>(null);
+  const tableNameInputRef = useRef<HTMLInputElement>(null);
+  const columnNameInputRef = useRef<HTMLInputElement>(null);
+  const columnTypeInputRef = useRef<HTMLInputElement>(null);
+  const skipTableNameBlurRef = useRef(false);
+  const skipRowBlurRef = useRef(false);
 
-  const updateRows = (nextRows: EntityRow[]) => {
+  const selectShape = () => editor.select(shape.id);
+
+  const updateRows = useCallback((rows: EntityRow[]) => {
     editor.updateShape({
       id: shape.id,
       type: ENTITY_TABLE_TYPE,
-      props: { rows: nextRows },
+      props: { rows, h: getTableHeight(rows.length) },
     });
+  }, [editor, shape.id]);
+
+  const finishRowEdit = useCallback(() => {
+    if (!editingRowDraft) return;
+
+    const previousRow = shape.props.rows.find(
+      (row) => row.id === editingRowDraft.id,
+    );
+    const name = editingRowDraft.name.trim();
+
+    if (!name && newRowId === editingRowDraft.id) {
+      updateRows(
+        shape.props.rows.filter((row) => row.id !== editingRowDraft.id),
+      );
+    } else {
+      updateRows(
+        shape.props.rows.map((row) =>
+          row.id === editingRowDraft.id
+            ? {
+                ...editingRowDraft,
+                name: name || previousRow?.name || "",
+                dataType: editingRowDraft.dataType.trim() || "string",
+              }
+            : row,
+        ),
+      );
+    }
+    setEditingRowId(null);
+    setEditingRowDraft(null);
+    setNewRowId(null);
+  }, [editingRowDraft, newRowId, shape.props.rows, updateRows]);
+
+  const cancelRowEdit = () => {
+    skipRowBlurRef.current = true;
+    window.setTimeout(() => {
+      skipRowBlurRef.current = false;
+    }, 0);
+    if (newRowId) {
+      updateRows(shape.props.rows.filter((row) => row.id !== newRowId));
+    }
+    setEditingRowId(null);
+    setEditingRowDraft(null);
+    setNewRowId(null);
   };
 
-  const getDropPosition = (
-    event: DragEvent<HTMLDivElement>,
-  ): "above" | "below" => {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    return event.clientY < bounds.top + bounds.height / 2 ? "above" : "below";
+  const beginRowEdit = (row: EntityRow) => {
+    selectShape();
+    setEditingRowDraft({ ...row });
+    setEditingRowId(row.id);
+    setNewRowId(null);
   };
 
-  const reorderRow = (
-    sourceId: string,
-    targetId: string,
-    position: "above" | "below",
+  const handleInlineKeyDown = (
+    event: InlineKeyEvent,
+    onEnter: () => void,
+    onEscape: () => void,
   ) => {
-    if (sourceId === targetId) return;
-
-    const nextRows = shape.props.rows.map((row) => ({ ...row }));
-    const sourceIndex = nextRows.findIndex((row) => row.id === sourceId);
-    const targetIndex = nextRows.findIndex((row) => row.id === targetId);
-    if (sourceIndex < 0 || targetIndex < 0) return;
-
-    const [draggedRow] = nextRows.splice(sourceIndex, 1);
-    const updatedTargetIndex = nextRows.findIndex((row) => row.id === targetId);
-    nextRows.splice(
-      updatedTargetIndex + (position === "below" ? 1 : 0),
-      0,
-      draggedRow,
-    );
-    updateRows(nextRows);
+    event.stopPropagation();
+    if (event.key === "Enter") {
+      event.preventDefault();
+      onEnter();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      onEscape();
+    }
   };
 
-  const saveTable = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const normalizedName = tableName.trim();
-    if (!normalizedName) return;
-
-    editor.updateShape({
-      id: shape.id,
-      type: ENTITY_TABLE_TYPE,
-      props: {
-        tableName: normalizedName,
-        rows,
-        h: getTableHeight(rows.length),
-      },
-    });
-    setTableDialogOpen(false);
+  const stopInlineKeyEvent = (event: InlineKeyEvent) => {
+    event.stopPropagation();
   };
 
-  const updateDraftRow = (
-    rowId: string,
-    update: Partial<EntityRow>,
-  ) => {
-    setRows((current) =>
-      current.map((row) => (row.id === rowId ? { ...row, ...update } : row)),
-    );
+  const stopInlinePointerEvent = (event: InlinePointerEvent) => {
+    event.stopPropagation();
   };
 
-  const saveRow = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!editingRow?.name.trim() || !editingRow.dataType.trim()) return;
+  const saveTableName = useCallback(() => {
+    const tableName = tableNameDraft.trim();
+    if (tableName) {
+      editor.updateShape({
+        id: shape.id,
+        type: ENTITY_TABLE_TYPE,
+        props: { tableName },
+      });
+    } else {
+      setTableNameDraft(shape.props.tableName);
+    }
+    setEditingTableName(false);
+  }, [editor, shape.id, shape.props.tableName, tableNameDraft]);
 
-    updateRows(
-      shape.props.rows.map((row) =>
-        row.id === editingRow.id
-          ? {
-              ...editingRow,
-              name: editingRow.name.trim(),
-              dataType: editingRow.dataType.trim(),
-            }
-          : row,
-      ),
+  const cancelTableName = () => {
+    skipTableNameBlurRef.current = true;
+    window.setTimeout(() => {
+      skipTableNameBlurRef.current = false;
+    }, 0);
+    setTableNameDraft(shape.props.tableName);
+    setEditingTableName(false);
+  };
+
+  const handleTableNameBlur = () => {
+    if (skipTableNameBlurRef.current) {
+      skipTableNameBlurRef.current = false;
+      return;
+    }
+    saveTableName();
+  };
+
+  const handleRowInputBlur = (event: FocusEvent<HTMLInputElement>) => {
+    if (
+      event.relatedTarget === columnNameInputRef.current ||
+      event.relatedTarget === columnTypeInputRef.current
+    ) {
+      return;
+    }
+    if (skipRowBlurRef.current) {
+      skipRowBlurRef.current = false;
+      return;
+    }
+    finishRowEdit();
+  };
+
+  const addColumn = () => {
+    const row = newRow();
+    selectShape();
+    updateRows([...shape.props.rows, row]);
+    setEditingRowDraft(row);
+    setEditingRowId(row.id);
+    setNewRowId(row.id);
+  };
+
+  const updateRowFlag = (field: "isPK" | "isFK") => {
+    if (!editingRowDraft) return;
+    const updatedRow = {
+      ...editingRowDraft,
+      [field]: !editingRowDraft[field],
+    };
+    const rows = shape.props.rows.map((row) =>
+      row.id === updatedRow.id ? updatedRow : row,
     );
-    setRowDialogOpen(false);
+    updateRows(rows);
+    setEditingRowDraft(updatedRow);
+  };
+
+  const moveRow = (offset: -1 | 1) => {
+    if (!editingRowId) return;
+    const currentIndex = shape.props.rows.findIndex(
+      (row) => row.id === editingRowId,
+    );
+    const nextIndex = currentIndex + offset;
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= shape.props.rows.length) {
+      return;
+    }
+
+    const rows = [...shape.props.rows];
+    [rows[currentIndex], rows[nextIndex]] = [rows[nextIndex], rows[currentIndex]];
+    updateRows(rows);
   };
 
   const deleteRow = () => {
-    if (!editingRow) return;
-    updateRows(shape.props.rows.filter((row) => row.id !== editingRow.id));
-    setRowDialogOpen(false);
+    if (!editingRowId) return;
+    updateRows(shape.props.rows.filter((row) => row.id !== editingRowId));
+    setEditingRowId(null);
+    setEditingRowDraft(null);
+    setNewRowId(null);
   };
 
-  const updateEditingRow = (
-    field: "name" | "dataType",
-    event: ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = event.currentTarget.value;
-    setEditingRow((row) => (row ? { ...row, [field]: value } : row));
-  };
+  useEffect(() => {
+    if (editingTableName) {
+      tableNameInputRef.current?.focus();
+      tableNameInputRef.current?.setSelectionRange(
+        tableNameInputRef.current.value.length,
+        tableNameInputRef.current.value.length,
+      );
+    }
+  }, [editingTableName]);
+
+  useEffect(() => {
+    if (editingRowId) {
+      columnNameInputRef.current?.focus();
+      if (newRowId === editingRowId) {
+        columnNameInputRef.current?.select();
+      } else {
+        columnNameInputRef.current?.setSelectionRange(
+          columnNameInputRef.current.value.length,
+          columnNameInputRef.current.value.length,
+        );
+      }
+    }
+  }, [editingRowId, newRowId]);
+
+  useEffect(() => {
+    if (!editingRowId && !editingTableName) return;
+
+    return editor.store.listen(
+      () => {
+        if (editor.getSelectedShapeIds().includes(shape.id)) return;
+        if (editingRowId) finishRowEdit();
+        if (editingTableName) saveTableName();
+      },
+      { scope: "session" },
+    );
+  }, [
+    editor,
+    editingRowId,
+    editingTableName,
+    finishRowEdit,
+    saveTableName,
+    shape.id,
+  ]);
+
+  const editingRowIndex = shape.props.rows.findIndex(
+    (row) => row.id === editingRowId,
+  );
 
   return (
-    <>
+    <div
+      className="entity-table group/entity-table pointer-events-auto relative overflow-visible text-foreground"
+      style={{ width: shape.props.w, height: shape.props.h }}
+    >
       <div
-        className="entity-table pointer-events-auto h-full w-full overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-xl"
-        style={{ width: shape.props.w, height: shape.props.h }}
+        className={`h-full w-full overflow-hidden rounded-xl border bg-card shadow-sm ${
+          isSelected || editingTableName || editingRowId
+            ? "border-primary"
+            : "border-border"
+        }`}
       >
-        <div className="flex h-[38px] items-center border-b border-border bg-muted/60 px-3 font-mono text-sm font-semibold text-foreground">
-          <span className="truncate">{shape.props.tableName}</span>
-        </div>
-        {shape.props.rows.map((row) => (
-          <div
-            key={row.id}
-            className={`flex h-[34px] items-center gap-2 border-b border-border/70 px-2 last:border-b-0 hover:bg-accent/70 ${
-              dropTarget?.rowId === row.id
-                ? dropTarget.position === "above"
-                  ? "border-t-2 border-t-primary"
-                  : "border-b-2 border-b-primary"
-                : ""
-            }`}
-            onDragOver={(event) => {
-              if (!draggedRowId || draggedRowId === row.id) return;
-              event.preventDefault();
-              event.stopPropagation();
-              setDropTarget({
-                rowId: row.id,
-                position: getDropPosition(event),
-              });
-            }}
-            onDrop={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              const sourceId =
-                event.dataTransfer.getData("text/plain") || draggedRowId;
-              if (sourceId) {
-                reorderRow(sourceId, row.id, getDropPosition(event));
+        <div className="flex h-[38px] items-center gap-2 border-b border-border bg-secondary/60 px-3 text-sm font-semibold text-white">
+          <Table2 aria-hidden="true" className="size-4 shrink-0 text-primary/80" />
+          {editingTableName ? (
+            <input
+              ref={tableNameInputRef}
+              aria-label="Table name"
+              className="h-8 min-w-0 flex-1 border-0 border-b border-transparent bg-transparent px-0 text-sm font-semibold text-white outline-none focus-visible:border-primary focus-visible:ring-0"
+              value={tableNameDraft}
+              onChange={(event) => setTableNameDraft(event.currentTarget.value)}
+              onPointerDown={stopInlinePointerEvent}
+              onKeyDown={(event) =>
+                handleInlineKeyDown(event, saveTableName, cancelTableName)
               }
-              setDraggedRowId(null);
-              setDropTarget(null);
-            }}
-          >
-            <button
-              type="button"
-              draggable
-              aria-label={`Reorder ${row.name}`}
-              className="flex h-6 w-4 shrink-0 cursor-grab items-center justify-center text-muted-foreground hover:text-primary active:cursor-grabbing"
+              onKeyUp={stopInlineKeyEvent}
+              onBlur={handleTableNameBlur}
+            />
+          ) : (
+            <span
+              className="min-w-0 flex-1 cursor-text truncate"
               onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => event.stopPropagation()}
-              onDragStart={(event) => {
+              onDoubleClick={(event) => {
+                event.preventDefault();
                 event.stopPropagation();
-                event.dataTransfer.effectAllowed = "move";
-                event.dataTransfer.setData("text/plain", row.id);
-                setDraggedRowId(row.id);
-              }}
-              onDragEnd={() => {
-                setDraggedRowId(null);
-                setDropTarget(null);
+                selectShape();
+                setTableNameDraft(shape.props.tableName);
+                setEditingTableName(true);
               }}
             >
-              <GripVertical aria-hidden="true" size={14} />
-            </button>
-            <span className="min-w-0 flex-1 truncate font-mono text-xs text-foreground">
-              {row.name}
+              {shape.props.tableName}
             </span>
-            <span className="truncate font-mono text-xs text-muted-foreground">
-              {row.dataType}
-            </span>
-            {row.isPK && <KeyBadge label="PK" />}
-            {row.isFK && <KeyBadge label="FK" />}
-          </div>
-        ))}
+          )}
+        </div>
+
+        {shape.props.rows.map((row) => {
+          const isEditing = editingRowId === row.id && editingRowDraft;
+
+          return (
+            <div
+              key={row.id}
+              className={`flex h-[34px] items-center gap-2 border-b border-border/60 px-3 text-[13px] transition-colors duration-150 last:border-b-0 hover:bg-accent/20 ${
+                isEditing ? "border-l-2 border-l-primary bg-accent/30 pl-2" : ""
+              }`}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={() => {
+                if (!isEditing) beginRowEdit(row);
+              }}
+            >
+              {isEditing ? (
+                <>
+                  <input
+                    ref={columnNameInputRef}
+                    aria-label="Column name"
+                    className="h-[33px] min-w-0 flex-1 border-0 border-b border-transparent bg-transparent px-0 text-[13px] text-white outline-none focus-visible:border-primary focus-visible:ring-0"
+                    value={editingRowDraft.name}
+                    onChange={(event) =>
+                      setEditingRowDraft({
+                        ...editingRowDraft,
+                        name: event.currentTarget.value,
+                      })
+                    }
+                    onPointerDown={stopInlinePointerEvent}
+                    onKeyDown={(event) => {
+                      if (event.key === "Tab" && !event.shiftKey) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        columnTypeInputRef.current?.focus();
+                        return;
+                      }
+                      handleInlineKeyDown(
+                        event,
+                        finishRowEdit,
+                        cancelRowEdit,
+                      );
+                    }}
+                    onKeyUp={stopInlineKeyEvent}
+                    onBlur={handleRowInputBlur}
+                  />
+                  {editingRowDraft.isPK && <KeyBadge label="PK" />}
+                  {editingRowDraft.isFK && <KeyBadge label="FK" />}
+                  <input
+                    ref={columnTypeInputRef}
+                    aria-label="Data type"
+                    list={`entity-table-types-${shape.id}`}
+                    className="h-[33px] w-[76px] shrink-0 border-0 border-b border-transparent bg-transparent px-0 text-right font-mono text-xs text-white outline-none focus-visible:border-primary focus-visible:ring-0"
+                    value={editingRowDraft.dataType}
+                    onChange={(event) =>
+                      setEditingRowDraft({
+                        ...editingRowDraft,
+                        dataType: event.currentTarget.value,
+                      })
+                    }
+                    onPointerDown={stopInlinePointerEvent}
+                    onKeyDown={(event) =>
+                      handleInlineKeyDown(
+                        event,
+                        finishRowEdit,
+                        cancelRowEdit,
+                      )
+                    }
+                    onKeyUp={stopInlineKeyEvent}
+                    onBlur={handleRowInputBlur}
+                  />
+                  <datalist id={`entity-table-types-${shape.id}`}>
+                    {[
+                      "uuid",
+                      "string",
+                      "text",
+                      "int",
+                      "bigint",
+                      "float",
+                      "boolean",
+                      "json",
+                      "timestamptz",
+                      "date",
+                      "enum",
+                    ].map((type) => (
+                      <option key={type} value={type} />
+                    ))}
+                  </datalist>
+                </>
+              ) : (
+                <>
+                  <span className="min-w-0 max-w-[55%] shrink truncate text-[13px] text-white">
+                    {row.name}
+                  </span>
+                  {row.isPK && <KeyBadge label="PK" />}
+                  {row.isFK && <KeyBadge label="FK" />}
+                  <span className="ml-auto max-w-28 truncate font-mono text-xs text-muted-foreground">
+                    {row.dataType}
+                  </span>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      <Dialog open={tableDialogOpen} onOpenChange={setTableDialogOpen}>
-        <DialogContent
-          className="z-[10001] ring-primary/20"
-          overlayClassName="z-[10000]"
-          onPointerDownCapture={(event) => event.stopPropagation()}
-        >
-          <form onSubmit={saveTable} className="space-y-4">
-            <DialogHeader>
-              <DialogTitle>Edit table</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-2">
-              <Label htmlFor={`table-name-${shape.id}`}>Table name</Label>
-              <Input
-                id={`table-name-${shape.id}`}
-                value={tableName}
-                onChange={(event) => setTableName(event.currentTarget.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Columns</Label>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    setRows((current) => [
-                      ...current,
-                      {
-                        id: crypto.randomUUID(),
-                        name: "",
-                        dataType: "",
-                        isPK: false,
-                        isFK: false,
-                      },
-                    ])
-                  }
-                >
-                  Add Column
-                </Button>
-              </div>
-              <div className="entity-table-scrollbar max-h-56 space-y-2 overflow-y-auto">
-                {rows.map((row) => (
-                  <div
-                    key={row.id}
-                    className="space-y-2 rounded-md border border-border bg-background/40 p-2 transition-colors hover:border-primary/40"
-                  >
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        aria-label="Column name"
-                        placeholder="Column name"
-                        value={row.name}
-                        onChange={(event) =>
-                          updateDraftRow(row.id, {
-                            name: event.currentTarget.value,
-                          })
-                        }
-                        required
-                      />
-                      <Input
-                        aria-label="Data type"
-                        placeholder="Data type"
-                        value={row.dataType}
-                        onChange={(event) =>
-                          updateDraftRow(row.id, {
-                            dataType: event.currentTarget.value,
-                          })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex gap-4">
-                        <label className="flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            aria-label="Primary key"
-                            className="accent-primary focus-visible:outline-2 focus-visible:outline-ring"
-                            checked={row.isPK}
-                            onChange={(event) =>
-                              updateDraftRow(row.id, {
-                                isPK: event.currentTarget.checked,
-                              })
-                            }
-                          />
-                          PK
-                        </label>
-                        <label className="flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            aria-label="Foreign key"
-                            className="accent-primary focus-visible:outline-2 focus-visible:outline-ring"
-                            checked={row.isFK}
-                            onChange={(event) =>
-                              updateDraftRow(row.id, {
-                                isFK: event.currentTarget.checked,
-                              })
-                            }
-                          />
-                          FK
-                        </label>
-                      </div>
-                      <Button
-                        type="button"
-                        size="xs"
-                        variant="ghost"
-                        onClick={() =>
-                          setRows((current) =>
-                            current.filter((item) => item.id !== row.id),
-                          )
-                        }
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit">Save table</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <button
+        type="button"
+        aria-label="Add column"
+        className={`absolute left-0 top-full z-10 inline-flex h-7 items-center gap-1 rounded px-1.5 text-xs text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/entity-table:opacity-100 hover:text-white focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+          isSelected || editingRowId ? "opacity-100" : ""
+        }`}
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={(event) => {
+          event.stopPropagation();
+          addColumn();
+        }}
+      >
+        <Plus aria-hidden="true" className="size-3.5" />
+        Add column
+      </button>
 
-      <Dialog open={rowDialogOpen} onOpenChange={setRowDialogOpen}>
-        <DialogContent
-          className="z-[10001] ring-primary/20"
-          overlayClassName="z-[10000]"
-          onPointerDownCapture={(event) => event.stopPropagation()}
+      {editingRowDraft && editingRowIndex >= 0 && isSelected && (
+        <div
+          aria-label="Column actions"
+          className="absolute z-20 flex -translate-y-1/2 items-center gap-2 rounded-lg border border-border bg-popover p-1 shadow-sm"
+          style={{
+            left: "calc(100% + 8px)",
+            top:
+              ENTITY_TABLE_HEADER_HEIGHT +
+              editingRowIndex * ENTITY_TABLE_ROW_HEIGHT +
+              ENTITY_TABLE_ROW_HEIGHT / 2,
+          }}
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onClick={(event) => event.stopPropagation()}
         >
-          <form onSubmit={saveRow} className="space-y-4">
-            <DialogHeader>
-              <DialogTitle>Edit column</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-2">
-              <Label htmlFor={`column-name-${shape.id}`}>Column name</Label>
-              <Input
-                id={`column-name-${shape.id}`}
-                value={editingRow?.name ?? ""}
-                onChange={(event) => updateEditingRow("name", event)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`column-type-${shape.id}`}>Data type</Label>
-              <Input
-                id={`column-type-${shape.id}`}
-                value={editingRow?.dataType ?? ""}
-                onChange={(event) => updateEditingRow("dataType", event)}
-                required
-              />
-            </div>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="accent-primary focus-visible:outline-2 focus-visible:outline-ring"
-                  checked={editingRow?.isPK ?? false}
-                  onChange={(event) => {
-                    const isPK = event.currentTarget.checked;
-                    setEditingRow((row) => (row ? { ...row, isPK } : row));
-                  }}
-                />
-                Primary key
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  className="accent-primary focus-visible:outline-2 focus-visible:outline-ring"
-                  checked={editingRow?.isFK ?? false}
-                  onChange={(event) => {
-                    const isFK = event.currentTarget.checked;
-                    setEditingRow((row) => (row ? { ...row, isFK } : row));
-                  }}
-                />
-                Foreign key
-              </label>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="destructive" onClick={deleteRow}>
-                Delete row
-              </Button>
-              <Button type="submit">Save column</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </>
+          <ToolbarButton
+            label="Toggle primary key"
+            active={editingRowDraft.isPK}
+            activeStyle="highlight"
+            onClick={() => updateRowFlag("isPK")}
+          >
+            <KeyRound aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Toggle foreign key"
+            active={editingRowDraft.isFK}
+            activeStyle="primary"
+            onClick={() => updateRowFlag("isFK")}
+          >
+            <Link2 aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarDivider />
+          <ToolbarButton
+            label="Move column up"
+            disabled={editingRowIndex === 0}
+            onClick={() => moveRow(-1)}
+          >
+            <ChevronUp aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarButton
+            label="Move column down"
+            disabled={editingRowIndex === shape.props.rows.length - 1}
+            onClick={() => moveRow(1)}
+          >
+            <ChevronDown aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+          <ToolbarDivider />
+          <ToolbarButton
+            label="Delete column"
+            destructive
+            onClick={deleteRow}
+          >
+            <Trash2 aria-hidden="true" className="size-4" />
+          </ToolbarButton>
+        </div>
+      )}
+    </div>
   );
+}
+
+function ToolbarButton({
+  children,
+  label,
+  active,
+  activeStyle,
+  disabled = false,
+  destructive = false,
+  onClick,
+}: {
+  children: React.ReactNode;
+  label: string;
+  active?: boolean;
+  activeStyle?: "highlight" | "primary";
+  disabled?: boolean;
+  destructive?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      aria-pressed={active}
+      disabled={disabled}
+      className={`inline-flex size-7 items-center justify-center rounded-md transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${
+        active && activeStyle === "highlight"
+          ? "bg-highlight/15 text-highlight"
+          : active && activeStyle === "primary"
+            ? "bg-primary/15 text-primary"
+            : destructive
+              ? "text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              : "text-muted-foreground hover:bg-accent"
+      }`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ToolbarDivider() {
+  return <span aria-hidden="true" className="h-5 w-px bg-border" />;
 }
 
 function KeyBadge({ label }: { label: "PK" | "FK" }) {
   return (
-    <span className="rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-amber-300">
+    <span className="shrink-0 rounded bg-highlight/15 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-highlight">
       {label}
     </span>
   );

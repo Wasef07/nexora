@@ -163,6 +163,7 @@ export function ShareDialog({
               checked={shareToken !== null}
               onCheckedChange={updateSharing}
               disabled={loading ?? false}
+              className="border-white/25 bg-white/15 data-checked:border-primary/40 data-unchecked:bg-white/15 dark:data-unchecked:bg-white/15 hover:data-unchecked:bg-white/20 dark:hover:data-unchecked:bg-white/20 focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background [&_[data-slot=switch-thumb]]:bg-white [&_[data-slot=switch-thumb]]:shadow-sm"
             />
           </div>
 

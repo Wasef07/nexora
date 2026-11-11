@@ -17,7 +17,7 @@ const RECENT_COUNT = 4;
 const DashboardPage = async () => {
   const user = await checkUser();
 
-  if (!user) redirect("/sign-in");
+  if (!user) redirect("/");
 
   const { orgName, where } = await getWorkspaceScope(user.id);
 

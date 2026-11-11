@@ -18,4 +18,8 @@ export type {
   EntityTableShapeProps,
 } from "./EntityTableShape";
 export { EntityTableShapeUtil, entityTableShapeUtils } from "./EntityTableShapeUtil";
-export { snapArrowBindingToRow } from "./snapArrowToRow";
+export {
+  ENTITY_TABLE_ROW_ID_META_KEY,
+  snapArrowBindingToRow,
+  updateEntityTableRelationshipArrow,
+} from "./snapArrowToRow";

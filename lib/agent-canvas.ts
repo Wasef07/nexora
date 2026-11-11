@@ -8,6 +8,7 @@ import {
   type VecModel,
 } from "tldraw";
 import { TABLE_WIDTH, getTableHeight, newRow, rowAnchorY, type EntityRow, type EntityTableShape } from "@/components/EntityTable/EntityTableShape";
+import { ENTITY_TABLE_ROW_ID_META_KEY } from "@/components/EntityTable/snapArrowToRow";
 import { canvasToolDefs, fail, normalizeModelText, ok, type ToolResult } from "@/lib/agent-tools";
 
 
@@ -56,17 +57,24 @@ function lookupTable(editor: Editor, idMap: ShapeIdMap, id: string) {
 }
 
 
-function rowAnchor(table: EntityTableShape, columnName: string): VecModel {
+function rowAnchor(table: EntityTableShape, columnName: string) {
   const index = table.props.rows.findIndex((r) => r.name === columnName);
-  return { x: 0.5, y: index === -1 ? 0.5 : rowAnchorY(index, table.props.rows.length) };
+  return {
+    anchor: {
+      x: 0.5,
+      y: index === -1 ? 0.5 : rowAnchorY(index, table.props.rows.length),
+    } satisfies VecModel,
+    ...(index === -1 ? {} : { rowId: table.props.rows[index].id }),
+  };
 }
 
 function createArrowBetween(
   editor: Editor,
   arrowId: TLShapeId,
-  from: { id: TLShapeId; anchor?: VecModel },
-  to: { id: TLShapeId; anchor?: VecModel },
-  label?: string
+  from: { id: TLShapeId; anchor?: VecModel; rowId?: string },
+  to: { id: TLShapeId; anchor?: VecModel; rowId?: string },
+  label?: string,
+  isRelationship = false,
 ) {
   const fromBounds = editor.getShapePageBounds(from.id);
   const toBounds = editor.getShapePageBounds(to.id);
@@ -78,6 +86,7 @@ function createArrowBetween(
     props: {
       start: { x: fromBounds.center.x, y: fromBounds.center.y },
       end: { x: toBounds.center.x, y: toBounds.center.y },
+      ...(isRelationship && { dash: "dashed" as const }),
       ...(label && { richText: richText(label) }),
     },
   });
@@ -92,6 +101,9 @@ function createArrowBetween(
         isPrecise: !!end.anchor,
         isExact: false,
       },
+      meta: end.rowId
+        ? { [ENTITY_TABLE_ROW_ID_META_KEY]: end.rowId }
+        : {},
     });
   }
   return ok();
@@ -207,8 +219,10 @@ export function executeCanvasTool(editor: Editor, idMap: ShapeIdMap, toolName: s
       return createArrowBetween(
         editor,
         resolveNewId(idMap, input.id),
-        { id: fromTable.id, anchor: rowAnchor(fromTable, input.fromColumnName) },
-        { id: toTable.id, anchor: rowAnchor(toTable, input.toColumnName) }
+        { id: fromTable.id, ...rowAnchor(fromTable, input.fromColumnName) },
+        { id: toTable.id, ...rowAnchor(toTable, input.toColumnName) },
+        undefined,
+        true,
       );
     }
 

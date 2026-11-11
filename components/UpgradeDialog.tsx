@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PricingTable, useAuth } from "@clerk/nextjs";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 
 type UpgradeReason = { title: string; description?: string };
 
@@ -28,7 +29,7 @@ export function UpgradeDialogProvider({ children }: { children: ReactNode }) {
             {reason?.description && <DialogDescription>{reason.description}</DialogDescription>}
           </DialogHeader>
 
-          <PricingTable for={orgId ? "organization" : "user"} />
+          <PricingTable for={orgId ? "organization" : "user"} appearance={clerkAppearance} />
         </DialogContent>
       </Dialog>
     </UpgradeDialogContext.Provider>
